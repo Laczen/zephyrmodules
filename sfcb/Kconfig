@@ -1,0 +1,64 @@
+# Kconfig - Simple/Secure/Small Flash Circular Buffer - SFCB
+#
+# Copyright (c) 2019 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SFCB
+	bool "Simple/Secure/Small Flash Circular Buffer - SFCB"
+	help
+	  Enable support of SFCB.
+
+if SFCB
+
+module = SFCB
+module-str = sfcb
+source "subsys/logging/Kconfig.template.log_config"
+
+config SFCB_WBS
+	int "SFCB write block size"
+	range 1 128
+	default 8
+	help
+	  SFCB will align writes to this size, it should be a power of 2 and a
+	  multiple of the flash device write block size. Set it as low as
+	  possible to reduce stack usage and to maximize flash utilization.
+
+config SFCB_ATE_CACHE_SIZE
+	int "SFCB ATE cache size (ATE count)"
+	range 1 32
+	default 1
+	help
+	  SFCB can use a cache mechanism to reduce the reads in the ATE region.
+	  When a cache size bigger than 1 is selected a read in the ATE region
+	  results in multiple ATE's being read in the ate_cache, this cache is
+	  then searched for a next ate. If the cache is exhausted a next read
+	  from flash is performed. The cache size is internally limited to 128
+	  bytes.
+
+config SFCB_ENABLE_CFG_CHECK
+	bool "SFCB enable configuration check"
+	depends on FLASH_PAGE_LAYOUT
+	default y
+	help
+	  When SFCB mounts a file system the supplied configuration is checked.
+	  This is especially good during development but takes code space. Once
+	  you are sure that the configuration is good you can disable the
+	  configuration check. Leave enabled if unsure.
+
+config SFCB_FLASH_SUPPORTS_UNALIGNED_READ
+	bool "SFCB flash backend supports unaligned read"
+	default n
+	help
+	  When the flash used supports unaligned reads SFCB can use this,
+	  enabling this option will reduce code. Leave disabled if unsure.
+
+config SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE
+	bool "SFCB flash backend supports unaligned write"
+	default n
+	help
+	  When the flash used supports unaligned writes SFCB can use this,
+	  enabling this option will reduce code. Leave disabled if unsure.
+
+endif # SFCB

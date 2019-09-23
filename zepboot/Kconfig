@@ -1,0 +1,19 @@
+# Kconfig - ZEPboot - zephyr bootloader
+#
+# Copyright (c) 2019 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ZEPBOOT
+	bool "Small secure bootloader"
+	help
+	  Enable support of ZEPBOOT.
+
+if ZEPBOOT
+
+module = ZEPBOOT
+module-str = zepboot
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZEPBOOT
