@@ -263,6 +263,67 @@ old information a compression routine can be defined that is started just after
 erasing a sector. The compression routine can then be used to copy the old data
 that is still needed.
 
+## Compress
+
+Whenever a new sector is started a compression routine is called to copy data
+from the start of the filesystem to the end. A typical application might be to
+keep at least one id-value pair (the newest), this is similar to nvs. This
+behavior can be achieved as:
+
+```
+int compress(sfcb_fs *fs)
+{
+	int rc;
+	sfcb_loc loc_compress, loc_walk;
+	sfcb_ate *ate_compress, *ate_walk;
+	bool copy;
+	u16_t compress_sector;
+
+	if (sfcb_first_loc(fs, &loc_compress)) {
+        /* if there is no data do nothing */
+		return 0;
+	}
+
+    (void)sfcb_compress_sector(fs, &compress_sector);
+
+	while (loc_compress.sector == compress_sector) {
+		copy = true;
+		ate_compress = sfcb_get_ate(&loc_compress);
+		loc_walk = loc_compress;
+
+    	while (!sfcb_next_loc(&loc_walk)) {
+			ate_walk = sfcb_get_ate(&loc_walk);
+			if (ate_compress->id == ate_walk->id) {
+                /* found something with the same id later in the fs */
+				copy = false;
+				break;
+			}
+		}
+
+		if ((copy) && (ate_compress->len != 0)) {
+			rc = sfcb_copy_loc(&loc_compress);
+			if (rc) {
+				return rc;
+			}
+		}
+
+		if (sfcb_next_loc(&loc_compress)) {
+			break;
+		}
+	}
+	return 0;
+}
+```
+
+and setting the sfcb compress routine:
+
+```
+sfcb.compress = &compress;
+```
+
+Other, more advanced compression techniques where filtering is done based upon
+id and value are easily implemented by changing the compression routine.
+
 ## Testing
 
 Sfcb comes with a test suite that can run on emulated (qemu_x86) or real
