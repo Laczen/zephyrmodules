@@ -8,6 +8,7 @@ line or by defining the folder as a `ZEPHYR_EXTRA_MODULES` in your own
 
 ### sfcb: a small/secure flash circular buffer, an alternative for `sfcb/nvs`.
 
+### settings_sfcb: sfcb backend support for settings.
 
 ### zepboot: a new secure bootloader for zephyr, an alternative for `mcuboot`.
 

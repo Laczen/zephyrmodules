@@ -1,0 +1,20 @@
+# Kconfig - Settings - SFCB Backend
+#
+# Copyright (c) 2019 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SETTINGS_SFCB
+	bool "Settings - SFCB Backend"
+	depends on SETTINGS && SFCB
+	help
+	  Enable support of SFCB Backend for settings.
+
+if SETTINGS_SFCB
+
+module = SETTINGS_SFCB
+module-str = settings_sfcb
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #SETTINGS_SFCB

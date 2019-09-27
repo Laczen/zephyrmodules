@@ -1008,6 +1008,9 @@ int sfcb_copy_loc(sfcb_loc *loc) {
 	if (rc) {
 		return rc;
 	}
+
+	/* Rewind the loc */
+	(void)sfcb_rewind_loc(loc);
 	while (len) {
 		rd_len = sfcb_read_loc(loc, &buf, sizeof(buf));
 		if (rd_len < 0) {
