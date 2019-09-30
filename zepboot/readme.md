@@ -33,7 +33,9 @@ Testing the bootloader with nrfjprog on nrf51/nrf52 devices requires 6 steps:
 west build -d build_zepboot -s zepboot/bootloader/ -b nrf52_pca10040 -t flash
 ```
 
-REMARK: The configuration file creates a bootloader with logging enabled, this creates a bootloader of about 22Kb. With logging disabled this size reduces to about 14.5Kb.
+REMARK: The configuration file creates a bootloader with logging enabled, this
+creates a bootloader of about 22Kb. With logging disabled this size reduces to
+about 14.5Kb.
 
 ### Step 2: Compile a test program (e.g. hello_world)
 
@@ -59,18 +61,21 @@ west build -s zephyr/samples/hello_world/ -b nrf52_pca10040
 ### Step 3: Sign and encrypt the test program:
 
 ```
-./scripts/imgtool.py sign -io 0x200 -ss 0x32000 -a 8 -v 0.0.1 -sk root-ec256.pem -ek boot-ec256.pem build/zephyr/zephyr.hex build/signed.hex
+./scripts/imgtool.py sign -io 0x200 -ss 0x32000 -a 8 -v 0.0.1 -sk root-ec256.pem
+ -ek boot-ec256.pem build/zephyr/zephyr.hex build/signed.hex
 ```
 
 ### Step 4: Adapt the signed.hex file and load it
 
-In case a image for execution from slot 1 has been generated, this image can be loaded using nrfjprog:
+In case a image for execution from slot 1 has been generated, this image can be
+loaded using nrfjprog:
 
 ```
 nrfjprog --program build/signed.hex --sectorerase
 ```
 
-In case the created hex file was generated for slot 0 it is required to adapt the starting address to upload it to slot 1 using nrfjprog (for nrf52_pca10040):
+In case the created hex file was generated for slot 0 it is required to adapt
+the starting address to upload it to slot 1 using nrfjprog (for nrf52_pca10040):
 
 ```
 objcopy --change-addresses 0x32000 build/signed.hex build/signedoff.hex
