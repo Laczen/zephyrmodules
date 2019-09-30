@@ -33,6 +33,10 @@ int settings_sfcb_dst(struct settings_sfcb *cf);
 int settings_sfcb_backend_init(struct settings_sfcb *cf);
 
 
+#if defined(CONFIG_SETTINGS_SFCB_DEFAULT)
+int settings_backend_init(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

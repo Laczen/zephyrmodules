@@ -284,3 +284,38 @@ int settings_sfcb_backend_init(struct settings_sfcb *cf)
 	}
 	return 0;
 }
+
+#if defined(CONFIG_SETTINGS_SFCB_DEFAULT)
+
+const sfcb_fs_cfg settings_sfcb_cfg = {
+	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
+	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
+	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
+		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
+};
+
+// variables used by the filesystem
+sfcb_fs settings_sfcb = {
+    .cfg = &settings_sfcb_cfg,
+};
+
+struct settings_sfcb setting_store = {
+    .cf_sfcb = &settings_sfcb,
+};
+
+int settings_backend_init(void)
+{
+	int rc;
+
+	rc = settings_sfcb_backend_init(&setting_store);
+    	// reformat if we can't mount the filesystem
+    	if (rc) {
+        	sfcb_format(&settings_sfcb);
+        	settings_sfcb_backend_init(&setting_store);
+    	}
+    	rc = settings_sfcb_src(&setting_store);
+    	rc = settings_sfcb_dst(&setting_store);
+	return rc;
+}
+#endif /* defined(CONFIG_SETTINGS_SFCB_DEFAULT) */

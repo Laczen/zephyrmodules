@@ -17,4 +17,10 @@ module = SETTINGS_SFCB
 module-str = settings_sfcb
 source "subsys/logging/Kconfig.template.log_config"
 
+config SETTINGS_SFCB_DEFAULT
+	bool "Enable a default SFCB backend for settings"
+	default y
+	help
+	  Prepare a default backend for settings storage
+
 endif #SETTINGS_SFCB
