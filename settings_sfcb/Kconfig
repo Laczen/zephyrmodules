@@ -19,6 +19,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config SETTINGS_SFCB_DEFAULT
 	bool "Enable a default SFCB backend for settings"
+	depends on SETTINGS_CUSTOM
 	default y
 	help
 	  Prepare a default backend for settings storage
