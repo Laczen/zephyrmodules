@@ -11,5 +11,6 @@ zephyr_library_sources_ifdef(CONFIG_ZEPBOOT
     zepboot/src/zb_image.c
     zepboot/src/zb_move.c
     zepboot/src/zb_tlv.c
+    zepboot/src/zb_slotmap.c
     )
 zephyr_library_link_libraries(zepboot)

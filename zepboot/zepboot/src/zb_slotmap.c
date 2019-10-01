@@ -14,7 +14,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "../../zepboot/include/zb_flash.h"
+#include "../include/zb_flash.h"
 
 const struct slt_area slot_map[] = {
 	{.slt0_offset = DT_FLASH_AREA_IMAGE_0_OFFSET,

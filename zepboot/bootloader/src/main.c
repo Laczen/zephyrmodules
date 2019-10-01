@@ -9,8 +9,8 @@
 #include <device.h>
 #include <string.h>
 #include <soc.h>
-#include "../../zepboot/include/zb_flash.h"
-#include "../../zepboot/include/zb_move.h"
+#include <zb_flash.h>
+#include <zb_move.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);

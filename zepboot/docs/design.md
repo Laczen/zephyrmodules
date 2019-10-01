@@ -84,7 +84,7 @@ For a image to be valid it has to satisfy:
 
 ## Image slot areas
 
-The image slot areas are defined in [slotmap.c](../bootloader/src/slotmap.c)
+The image slot areas are defined in [zb_slotmap.c](../zepboot/src/zb_slotmap.c)
 In this file for each slot area that is needed the flash areas for slot0, slot1
 and swapstat are defined.
 
