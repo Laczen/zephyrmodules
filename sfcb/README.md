@@ -265,6 +265,8 @@ that is still needed.
 
 ## Compress
 
+__REMARK: Compression is done while the sfcb filesystem is locked, see below.__
+
 Whenever a new sector is started a compression routine is called to copy data
 from the start of the filesystem to the end. A typical application might be to
 keep at least one id-value pair (the newest), this is similar to nvs. This
@@ -323,6 +325,10 @@ sfcb.compress = &compress;
 
 Other, more advanced compression techniques where filtering is done based upon
 id and value are easily implemented by changing the compression routine.
+
+To avoid that data is written while the filesystem is being compressed, the
+filesystem is kept in a locked state during compression. The `sfcb_open_loc()`
+and `sfcb_write()` methods will be blocked while compression is performed.
 
 ## Testing
 

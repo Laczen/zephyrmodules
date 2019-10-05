@@ -732,6 +732,9 @@ int sfcb_mount(sfcb_fs *fs)
 		return -EBUSY;
 	}
 
+	k_mutex_init(&fs->mutex);
+
+	sfcb_lock(fs);
 #if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
 	rc = sfcb_config_check(fs);
 	if (rc) {
@@ -750,8 +753,8 @@ int sfcb_mount(sfcb_fs *fs)
 		goto END;
 	}
 
-	k_mutex_init(&fs->mutex);
 END:
+	sfcb_unlock(fs);
 	if (rc) {
 		fs->flash_device = NULL;
 	}
@@ -821,7 +824,9 @@ int sfcb_open_loc(sfcb_fs *fs, sfcb_loc *loc, u16_t id, u16_t len)
 		}
 		/* call gc */
 		if (fs->compress && (fs->cfg->sector_cnt > 1)) {
+			sfcb_lock(fs);
 			rc = fs->compress(fs);
+			sfcb_unlock(fs);
 		}
 		nscnt++;
 		if (nscnt == fs->cfg->sector_cnt) {
@@ -1003,14 +1008,14 @@ int sfcb_copy_loc(sfcb_loc *loc) {
 		return -EACCES;
 	}
 
-	len = ate->len;
-	rc = sfcb_open_loc(loc->fs, &newloc, ate->id, len);
+	rc = sfcb_init_loc(loc->fs, &newloc, ate->id, ate->len);
 	if (rc) {
 		return rc;
 	}
 
 	/* Rewind the loc */
 	(void)sfcb_rewind_loc(loc);
+	len = ate->len;
 	while (len) {
 		rd_len = sfcb_read_loc(loc, &buf, sizeof(buf));
 		if (rd_len < 0) {
@@ -1023,6 +1028,7 @@ int sfcb_copy_loc(sfcb_loc *loc) {
 		len -= rd_len;
 	}
 	rc = sfcb_close_loc(&newloc);
+	sfcb_lock(loc->fs);
 	return rc;
 }
 
