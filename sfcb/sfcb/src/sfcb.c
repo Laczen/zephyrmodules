@@ -732,6 +732,9 @@ int sfcb_mount(sfcb_fs *fs)
 		return -EBUSY;
 	}
 
+	k_mutex_init(&fs->mutex);
+
+	sfcb_lock(fs);
 #if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
 	rc = sfcb_config_check(fs);
 	if (rc) {
@@ -750,8 +753,8 @@ int sfcb_mount(sfcb_fs *fs)
 		goto END;
 	}
 
-	k_mutex_init(&fs->mutex);
 END:
+	sfcb_unlock(fs);
 	if (rc) {
 		fs->flash_device = NULL;
 	}
@@ -821,7 +824,9 @@ int sfcb_open_loc(sfcb_fs *fs, sfcb_loc *loc, u16_t id, u16_t len)
 		}
 		/* call gc */
 		if (fs->compress && (fs->cfg->sector_cnt > 1)) {
+			sfcb_lock(fs);
 			rc = fs->compress(fs);
+			sfcb_unlock(fs);
 		}
 		nscnt++;
 		if (nscnt == fs->cfg->sector_cnt) {
@@ -835,19 +840,10 @@ int sfcb_open_loc(sfcb_fs *fs, sfcb_loc *loc, u16_t id, u16_t len)
 	return rc;
 }
 
-int sfcb_close_loc(sfcb_loc *loc)
+static int sfcb_close_loc_no_unlock(sfcb_loc *loc)
 {
 	int rc;
 	sfcb_ate *ate;
-
-	if (!loc) {
-		return -EINVAL;
-	}
-
-	if ((!loc->fs) || (loc->ate_offset != loc->fs->wr_ate_offset) ||
-	    (loc->sector != loc->fs->wr_sector)) {
-		return -EACCES;
-	}
 
 #if (!IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE))
 	u16_t data_offset;
@@ -857,7 +853,7 @@ int sfcb_close_loc(sfcb_loc *loc)
 		rc = sfcb_flash_write(loc->fs, loc->fs->wr_sector, data_offset,
 			loc->dcache, CONFIG_SFCB_WBS, NULL);
 		if (rc) {
-			goto END;
+			return rc;
 		}
 	}
 #endif /* (!IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE)) */
@@ -868,12 +864,27 @@ int sfcb_close_loc(sfcb_loc *loc)
 	rc = sfcb_flash_write(loc->fs, loc->fs->wr_sector,
 		loc->fs->wr_ate_offset, ate, SFCB_ATE_SIZE, NULL);
 	if (rc) {
-		goto END;
+		return rc;
 	}
 
 	loc->fs->wr_data_offset += sfcb_align_up(ate->len);
 	loc->fs->wr_ate_offset -= SFCB_ATE_SIZE;
-END:
+
+	return 0;
+}
+
+int sfcb_close_loc(sfcb_loc *loc) {
+	int rc;
+
+	if (!loc) {
+		return -EINVAL;
+	}
+	if ((!loc->fs) || (loc->ate_offset != loc->fs->wr_ate_offset) ||
+	    (loc->sector != loc->fs->wr_sector)) {
+		return -EACCES;
+	}
+
+	rc = sfcb_close_loc_no_unlock(loc);
 	sfcb_unlock(loc->fs);
 	return rc;
 }
@@ -1003,14 +1014,14 @@ int sfcb_copy_loc(sfcb_loc *loc) {
 		return -EACCES;
 	}
 
-	len = ate->len;
-	rc = sfcb_open_loc(loc->fs, &newloc, ate->id, len);
+	rc = sfcb_init_loc(loc->fs, &newloc, ate->id, ate->len);
 	if (rc) {
 		return rc;
 	}
 
 	/* Rewind the loc */
 	(void)sfcb_rewind_loc(loc);
+	len = ate->len;
 	while (len) {
 		rd_len = sfcb_read_loc(loc, &buf, sizeof(buf));
 		if (rd_len < 0) {
@@ -1022,7 +1033,7 @@ int sfcb_copy_loc(sfcb_loc *loc) {
 		}
 		len -= rd_len;
 	}
-	rc = sfcb_close_loc(&newloc);
+	rc = sfcb_close_loc_no_unlock(&newloc);
 	return rc;
 }
 
