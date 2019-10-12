@@ -12,3 +12,5 @@ line or by defining the folder as a `ZEPHYR_EXTRA_MODULES` in your own
 
 ### zepboot: a new secure bootloader for zephyr, an alternative for `mcuboot`.
 
+### zepboot_dfu: a (BT) dfu loader library and samples for zepboot.
+

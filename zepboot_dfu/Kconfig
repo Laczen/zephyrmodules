@@ -1,0 +1,38 @@
+# Kconfig - ZEPbootdfu - dfuloader for ZEPBOOT
+#
+# Copyright (c) 2019 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ZEPBOOT_DFU
+	bool "Support library for a dfu loader for ZEPBOOT"
+	depends on ZEPBOOT
+	help
+	  Enable support of ZEPBOOT dfu loader.
+
+if ZEPBOOT_DFU
+
+module = ZEPBOOT_DFU
+module-str = zepboot_dfu
+source "subsys/logging/Kconfig.template.log_config"
+
+config ZEPBOOT_DFU_BLOCK_BUF_SIZE
+	int "Image writer buffer size"
+	depends on ZEPBOOT_DFU
+	default 512
+	help
+	  Size (in Bytes) of buffer for image writer. Must be a multiple of
+	  the access alignment required by used flash driver.
+
+config ZEPBOOT_DFU_RESET_ONLY
+	bool "Enable only reset functionality for ZEPBOOT"
+	depends on ZEPBOOT
+	default n
+	help
+	  When an image is created to run from slot 1 it cannot provide loader
+	  functionality, if this option is selected the image will have the
+	  possibility to start the image in slot 0 and to reset the device
+	  using BT.
+
+endif # ZEPBOOT_DFU
