@@ -76,19 +76,30 @@ class Image():
         if ext == INTEL_HEX_EXT:
             ih = IntelHex(path)
             self.payload = ih.tobinarray()
+            # Padding the payload to aligned size
+            padding = self.align - len(self.payload) % self.align
+            self.payload = bytes(self.payload) + (b'\xff' * padding)
+            # finished padding
             self.image_address = ih.minaddr()
             self.slot_address = self.image_address - self.image_offset
             self.size = len(self.payload)
+            # Add empty image header.
             self.payload = (b'\xff' * self.image_offset) + self.payload
+
         else:
             if self.slot_address is None:
                 raise Exception("Input type bin requires a slot address")
             with open(path, 'rb') as f:
                 self.payload = f.read()
+            # Padding the payload to aligned size
+            padding = self.align - len(self.payload) % self.align
+            self.payload = bytes(self.payload) + (b'\xff' * padding)
+            # finished padding
+            self.image_address = self.slot_address + self.image_offset
             self.size = len(self.payload)
             # Add empty image header.
             self.payload = (b'\xff' * self.image_offset) + self.payload
-            self.image_address = self.slot_address + self.image_offset
+
 
         self.check()
 

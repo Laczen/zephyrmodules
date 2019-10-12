@@ -43,15 +43,13 @@ Creating a program for ZEPboot requires the following additions to prf.conf
 (nrf52_pca10040, image running from slot 0):
 
 ```
-CONFIG_FLASH_LOAD_OFFSET=0xc200
-CONFIG_FLASH_LOAD_SIZE=0x32000
+CONFIG_FLASH_LOAD_OFFSET=0x7200
 ```
 
 or (nrf52_pca10040, image running from slot 1):
 
 ```
-CONFIG_FLASH_LOAD_OFFSET=0x3e200
-CONFIG_FLASH_LOAD_SIZE=0x32000
+CONFIG_FLASH_LOAD_OFFSET=0x41000
 ```
 
 ```
@@ -61,7 +59,7 @@ west build -s zephyr/samples/hello_world/ -b nrf52_pca10040
 ### Step 3: Sign and encrypt the test program:
 
 ```
-./scripts/imgtool.py sign -io 0x200 -ss 0x32000 -a 8 -v 0.0.1 -sk root-ec256.pem
+./scripts/imgtool.py sign -io 0x200 -ss 0x3A000 -a 8 -v 0.0.1 -sk root-ec256.pem
  -ek boot-ec256.pem build/zephyr/zephyr.hex build/signed.hex
 ```
 
@@ -78,7 +76,7 @@ In case the created hex file was generated for slot 0 it is required to adapt
 the starting address to upload it to slot 1 using nrfjprog (for nrf52_pca10040):
 
 ```
-objcopy --change-addresses 0x32000 build/signed.hex build/signedoff.hex
+objcopy --change-addresses 0x3A000 build/signed.hex build/signedoff.hex
 ```
 
 Upload the new signedoff.hex using nrfjprog:
@@ -92,7 +90,7 @@ nrfjprog --program build/signedoff.hex --sectorerase
 Remark: the command has to be written in reverse order
 
 ```
-nrfjprog --memwr 0x6f000 --val 0xE2000011 --verify
+nrfjprog --memwr 0x7a000 --val 0xE2000011 --verify
 ```
 
 ### Step 6: Hit reset

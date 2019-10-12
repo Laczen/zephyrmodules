@@ -17,15 +17,19 @@
 #include "../include/zb_flash.h"
 
 const struct slt_area slot_map[] = {
-	{.slt0_offset = DT_FLASH_AREA_IMAGE_0_OFFSET,
+	{
 	 .slt1_offset = DT_FLASH_AREA_IMAGE_1_OFFSET,
-	 .swpstat_offset = DT_FLASH_AREA_IMAGE_SCRATCH_OFFSET,
-	 .slt0_size = DT_FLASH_AREA_IMAGE_0_SIZE,
 	 .slt1_size = DT_FLASH_AREA_IMAGE_1_SIZE,
-	 .swpstat_size = DT_FLASH_AREA_IMAGE_SCRATCH_SIZE,
-	 .slt0_devname = DT_FLASH_AREA_0_DEV,
 	 .slt1_devname = DT_FLASH_AREA_0_DEV,
+	 .slt0_offset = DT_FLASH_AREA_IMAGE_0_OFFSET,
+	 .slt0_size = DT_FLASH_AREA_IMAGE_0_SIZE,
+	 .slt0_devname = DT_FLASH_AREA_0_DEV,
+#if IS_ENABLED(CONFIG_ZEPBOOT_IS_BOOTLOADER)
+	 /* Only the bootloader needs access to swapstat */
+	 .swpstat_offset = DT_FLASH_AREA_IMAGE_SCRATCH_OFFSET,
+	 .swpstat_size = DT_FLASH_AREA_IMAGE_SCRATCH_SIZE,
 	 .swpstat_devname = DT_FLASH_AREA_0_DEV,
+#endif
 	},
 };
 

@@ -124,27 +124,29 @@ u8_t zb_slt_area_cnt(void)
 
 int zb_slt_area_get(struct zb_slt_area *area,  u8_t slt_idx)
 {
-	area->slt0_offset = slot_map[slt_idx].slt0_offset;
 	area->slt1_offset = slot_map[slt_idx].slt1_offset;
-	area->swpstat_offset = slot_map[slt_idx].swpstat_offset;
-
-	area->slt0_size = slot_map[slt_idx].slt0_size;
 	area->slt1_size = slot_map[slt_idx].slt1_size;
-	area->swpstat_size = slot_map[slt_idx].swpstat_size;
-
-	area->slt0_fldev = device_get_binding(slot_map[slt_idx].slt0_devname);
-	if (!area->slt0_fldev) {
-		return -ENXIO;
-	}
 	area->slt1_fldev = device_get_binding(slot_map[slt_idx].slt1_devname);
 	if (!area->slt1_fldev) {
 		return -ENXIO;
 	}
+
+	area->slt0_offset = slot_map[slt_idx].slt0_offset;
+	area->slt0_size = slot_map[slt_idx].slt0_size;
+	area->slt0_fldev = device_get_binding(slot_map[slt_idx].slt0_devname);
+	if (!area->slt0_fldev) {
+		return -ENXIO;
+	}
+
+#if IS_ENABLED(CONFIG_ZEPBOOT_IS_BOOTLOADER)
+	area->swpstat_offset = slot_map[slt_idx].swpstat_offset;
+	area->swpstat_size = slot_map[slt_idx].swpstat_size;
 	area->swpstat_fldev =
 		device_get_binding(slot_map[slt_idx].swpstat_devname);
 	if (!area->swpstat_fldev) {
 		return -ENXIO;
 	}
+#endif
 	return 0;
 }
 

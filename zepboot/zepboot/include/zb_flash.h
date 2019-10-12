@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define SECTOR_SIZE DT_FLASH_ERASE_BLOCK_SIZE
+#define SECTOR_SIZE CONFIG_ZEPBOOT_SECTOR_SIZE
 #define EMPTY_U8 0xff
 #define EMPTY_U32 0xffffffff
 #define ALIGN_BUF_SIZE	16

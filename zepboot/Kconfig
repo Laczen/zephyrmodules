@@ -16,4 +16,21 @@ module = ZEPBOOT
 module-str = zepboot
 source "subsys/logging/Kconfig.template.log_config"
 
+config ZEPBOOT_IS_BOOTLOADER
+	bool "Enable ZEPBOOT library for a bootloader"
+	depends on ZEPBOOT
+	default n
+	help
+	  Enables the ZEPBOOT library to be used for a bootloader, this selects
+	  items that are not used in case only ZEPBOOT support is needed.
+
+config ZEPBOOT_SECTOR_SIZE
+	int "Sector size used during moving of images"
+	depends on ZEPBOOT
+	default 4096
+	help
+	  Size (in Bytes) of a sector. Must be a multiple of the flash page size
+	  of the used flash driver. When using multiple drivers the value has to
+	  be a multiple of the flash page size of all used drivers.
+
 endif # ZEPBOOT
