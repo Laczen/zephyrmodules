@@ -201,7 +201,8 @@ void test_sfcb_loc_first(void) {
 	rc = sfcb_mount(&sfcb);
 	zassert_true(rc == 0, "Mount failed [%d]", rc);
 
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
@@ -217,7 +218,8 @@ void test_sfcb_loc_first(void) {
 	rc = sfcb_mount(&sfcb);
 	zassert_true(rc == 0, "Mount failed [%d]", rc);
 
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
@@ -233,7 +235,8 @@ void test_sfcb_loc_first(void) {
 	rc = sfcb_mount(&sfcb);
 	zassert_true(rc == 0, "Mount failed [%d]", rc);
 
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
@@ -253,7 +256,8 @@ void test_sfcb_loc_first(void) {
 
 	rc = sfcb_compress_sector(&sfcb, &sector);
 	zassert_true(rc == 0, "Failed to get compress sector");
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "Failed to get first loc");
 	rc = sector - loc.sector;
 	zassert_true(rc == 0, "Wrong compress sector");
@@ -268,7 +272,8 @@ void test_sfcb_loc_first(void) {
 
 	rc = sfcb_compress_sector(&sfcb, &sector);
 	zassert_true(rc == 0, "Failed to get compress sector");
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "Failed to get first loc");
 	rc = sector - loc.sector;
 	zassert_true(rc == 0, "Wrong compress sector");
@@ -286,7 +291,8 @@ void test_sfcb_loc_first(void) {
 
 	rc = sfcb_compress_sector(&sfcb, &sector);
 	zassert_true(rc == 0, "Failed to get compress sector");
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "Failed to get first loc");
 	rc = sector - loc.sector;
 	zassert_false(rc == 0, "Wrong compress sector");
@@ -304,7 +310,8 @@ void test_sfcb_loc_first(void) {
 
 	rc = sfcb_compress_sector(&sfcb, &sector);
 	zassert_true(rc == 0, "Failed to get compress sector");
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "Failed to get first loc");
 	rc = sector - loc.sector;
 	zassert_true(rc == 0, "Wrong compress sector");
@@ -323,7 +330,8 @@ void test_sfcb_loc_walk(void)
 	zassert_true(rc == 0, "Mount failed [%d]", rc);
 
 	/* walking forward */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed");
 
 	while (1) {
@@ -379,7 +387,8 @@ void test_sfcb_readwritelowlevel(void)
 	}
 
 	/* read entry with id = 0 in one step */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 	while (1) {
 		ate = sfcb_get_ate(&loc);
@@ -397,7 +406,8 @@ void test_sfcb_readwritelowlevel(void)
 	}
 
 	/* read entry with id = 0 in chunks */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 	while (1) {
 		ate = sfcb_get_ate(&loc);
@@ -417,7 +427,8 @@ void test_sfcb_readwritelowlevel(void)
 	}
 
 	/* read entry with id = 10 in one step */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 	while (1) {
 		ate = sfcb_get_ate(&loc);
@@ -435,7 +446,8 @@ void test_sfcb_readwritelowlevel(void)
 	}
 
 	/* read entry with id = 10 in chunks */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 	while (1) {
 		ate = sfcb_get_ate(&loc);
@@ -455,7 +467,8 @@ void test_sfcb_readwritelowlevel(void)
 	}
 
 	/* read entry with id = 10 in chunks */
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 	while (1) {
 		ate = sfcb_get_ate(&loc);
@@ -515,7 +528,11 @@ int compress(sfcb_fs *fs)
 	bool copy;
 	u16_t compress_sector;
 
-	if (sfcb_first_loc(fs, &loc_compress)) {
+	if (sfcb_start_loc(fs, &loc_compress)) {
+		return 0;
+	}
+
+	if (sfcb_next_loc(&loc_compress)) {
 		return 0;
 	}
 	rc = sfcb_compress_sector(fs, &compress_sector);
@@ -607,7 +624,8 @@ void test_sfcb_compress(void)
 	 * succeed.
 	 */
 	found = false;
-	rc = sfcb_first_loc(&sfcb, &loc);
+	rc = sfcb_start_loc(&sfcb, &loc);
+	rc = sfcb_next_loc(&loc);
 	zassert_true(rc == 0, "first loc failed [%d]", rc);
 
 	do {

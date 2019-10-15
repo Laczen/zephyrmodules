@@ -408,10 +408,8 @@ int sfcb_next_loc(sfcb_loc *loc)
 	return 0;
 }
 
-int sfcb_first_loc(sfcb_fs *fs, sfcb_loc *loc)
+int sfcb_start_loc(sfcb_fs *fs, sfcb_loc *loc)
 {
-	int rc;
-
 	if ((!fs) || (!loc)) {
 		return -EINVAL;
 	}
@@ -423,8 +421,7 @@ int sfcb_first_loc(sfcb_fs *fs, sfcb_loc *loc)
 #if (CONFIG_SFCB_ATE_CACHE_SIZE !=1)
 	loc->ate_cache_offset = 0;
 #endif
-	rc = sfcb_next_loc(loc);
-	return rc;
+	return 0;
 }
 
 int sfcb_compress_sector(sfcb_fs *fs, u16_t *sector)
@@ -972,7 +969,7 @@ ssize_t sfcb_read_loc(sfcb_loc *loc, void *data, size_t len)
 	sfcb_ate *ate;
 	u16_t data_offset;
 
-	if (!loc) {
+	if ((!loc) || (!loc->fs)) {
 		return -EACCES;
 	}
 
@@ -1062,17 +1059,24 @@ ssize_t sfcb_read(sfcb_fs *fs, u16_t id, void *data, size_t len)
 	int rc;
 	sfcb_loc loc, loc_walk;
 	sfcb_ate *ate;
+	bool read = false;
 
-	rc = sfcb_first_loc(fs, &loc_walk);
+	rc = sfcb_start_loc(fs, &loc_walk);
 	if (rc) {
 		return rc;
 	}
-	do {
+
+	while (!sfcb_next_loc(&loc_walk)) {
 		ate = sfcb_get_ate(&loc_walk);
 		if (ate->id == id) {
 			loc = loc_walk;
+			read = true;
 		}
-	} while (!sfcb_next_loc(&loc_walk));
+	}
+
+	if (!read) {
+		return -ENOENT;
+	}
 
 	return sfcb_read_loc(&loc, data, len);
 

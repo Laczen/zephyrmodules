@@ -293,15 +293,18 @@ int sfcb_copy_loc(sfcb_loc *loc);
 int sfcb_next_loc(sfcb_loc *loc);
 
 /**
- * @brief sfcb_first_loc(sfcb_fs *fs, sfcb_loc *loc)
+ * @brief sfcb_start_loc(sfcb_fs *fs, sfcb_loc *loc)
  *
- * Get first location in fs.
+ * Get start location of fs, this is not really a location, but just a location
+ * initialisation so that a call to sfcb_next_loc() will return the first real
+ * loc.
+ *
  * @param fs: pointer to file system
  * @param loc: pointer to location
  * @retval 0 Succes
  * @retval -ERRNO errno code if error
  */
-int sfcb_first_loc(sfcb_fs *fs, sfcb_loc *loc);
+int sfcb_start_loc(sfcb_fs *fs, sfcb_loc *loc);
 
 /**
  * @brief sfcb_compress_sector(sfcb_fs *fs, u16_t *sectors)

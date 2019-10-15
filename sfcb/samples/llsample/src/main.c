@@ -36,13 +36,13 @@ int main(void) {
     }
 
     // read current count
-    if (!sfcb_first_loc(&sfcb, &loc)) {
-        do {
+    if (!sfcb_start_loc(&sfcb, &loc)) {
+        while (!sfcb_next_loc(&loc)) {
             ate = sfcb_get_ate(&loc);
             if (ate->id == 0) {
                 sfcb_read_loc(&loc, &boot_count, sizeof(boot_count));
             }
-        } while (!sfcb_next_loc(&loc));
+        }
     }
 
     // update boot count

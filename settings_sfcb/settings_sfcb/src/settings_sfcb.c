@@ -71,12 +71,13 @@ static int settings_sfcb_load(struct settings_store *cs,
 	sfcb_loc walk_loc;
 	bool load;
 
-	rc = sfcb_first_loc(cf->cf_sfcb, &read_fn_arg.loc);
+	rc = sfcb_start_loc(cf->cf_sfcb, &read_fn_arg.loc);
 	if (rc) {
-		return 0;
+		return rc;
 	}
 
-	do {
+	while (!sfcb_next_loc(&read_fn_arg.loc)) {
+
 		load_ate = sfcb_get_ate(&read_fn_arg.loc);
 		if (load_ate->id != SETTINGS_SFCB_ID) {
 			continue;
@@ -129,7 +130,7 @@ static int settings_sfcb_load(struct settings_store *cs,
 				}
 				if (*wp != *np) {
 					/* quit early when the walk location
-					 * has no information about the compress
+					 * has no information about the load
 					 */
 					break;
 				}
@@ -160,8 +161,8 @@ static int settings_sfcb_load(struct settings_store *cs,
 			}
 		}
 
-	} while (!sfcb_next_loc(&read_fn_arg.loc));
-	return rc;
+	}
+	return 0;
 }
 
 static int settings_sfcb_save(struct settings_store *cs, const char *name,
@@ -198,14 +199,22 @@ int settings_sfcb_compress(sfcb_fs *fs)
 	u8_t cdata[CONFIG_SFCB_WBS], wdata[CONFIG_SFCB_WBS];
 	u8_t *cdp, *wdp;
 
-	if (sfcb_first_loc(fs, &loc_compress)) {
-		return 0;
+	rc = sfcb_start_loc(fs, &loc_compress);
+	if (rc) {
+		return rc;
+	}
+	rc = sfcb_next_loc(&loc_compress);
+	if (rc) {
+		return rc;
 	}
 	rc = sfcb_compress_sector(fs, &compress_sector);
+	if (rc) {
+		return rc;
+	}
 
 	while (loc_compress.sector == compress_sector) {
-		copy = true;
 
+		copy = true;
 		ate_compress = sfcb_get_ate(&loc_compress);
 		if (ate_compress->id != SETTINGS_SFCB_ID) {
 			continue;
