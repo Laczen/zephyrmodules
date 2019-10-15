@@ -15,9 +15,47 @@ easy software upgrade.
 Many idea's that are used in the implementation are coming from MCUboot,
 a similar bootloader for 32-bit MCUs.
 
-
-
 ZEPboot is developed on top of the zephyr RTOS.
+
+## Why another bootloader ?
+
+MCUboot is a nice bootloader and the ideas behind it are really good, however
+some other parts need improvements. The main reason I decided to development
+ZEPboot are:
+
+a. The swap proces is wearing out flash to fast,
+
+b. The size of the mcuboot is to big,
+
+c. The swapping of images is to limiting on image size,
+
+d. There is no support for EC256 encrypted images.
+
+A comparison between MCUboot and ZEPboot for a nrf52 device:
+
+|                  | ZEPBoot      | MCUboot      | Remark |
+|------------------|--------------|--------------|--------|
+| bootloader size  | < 16kB       | > 32kB       | (1)    |
+| image upgrades   | ~ 5000       | ~ 1000 (700) | (2)    |
+| image size       | 240kB        | 232kB        | (3)    |
+| EC256 signature  | yes          | yes          |        |
+| EC256 encryption | yes          | no           | (4)    |
+| RSA signature    | no           | yes          |        |
+| RSA encryption   | no           | yes          | (4)    |
+| Multi-image      | yes          | yes          |        |
+
+(1) Logging disabled, encryption enabled,
+
+(2) For a 16kB scratch area, the number of upgrades for MCUboot is dependent
+on image size, worst case (232kB images) the number of upgrades would be about
+700,
+
+(3) When MCUboot is used in a configuration bootloader + image loader + image,
+the loader image can be smaller (80kB for bluetooth upgradeability) and the
+image size can be increased to 400kB.
+
+(4) Both MCUboot and ZEPboot use aes128-ctr encryption, the method to securely
+communicate the encryption key is what is meant by EC256 encryption and RSA encryption.
 
 ## Documentation
 
