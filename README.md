@@ -6,7 +6,7 @@ of choice and by adding them as an `ZEPHYR_EXTRA_MODULES` on the west command
 line or by defining the folder as a `ZEPHYR_EXTRA_MODULES` in your own
 `.zephyrrc`.
 
-### sfcb: a small/secure flash circular buffer, an alternative for `sfcb/nvs`.
+### sfcb: a small/secure flash circular buffer, an alternative for `fcb/nvs`.
 
 ### settings_sfcb: sfcb backend support for settings.
 
