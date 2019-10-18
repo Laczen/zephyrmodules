@@ -60,13 +60,19 @@ Creating a program for ZEPboot requires the following additions to prf.conf
 (nrf52_pca10040, image running from slot 0):
 
 ```
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
 CONFIG_FLASH_LOAD_OFFSET=0x7200
+# Available space: sector_size - one sector for swap - 0x200 for header
+CONFIG_FLASH_LOAD_SIZE=0x38E00
 ```
 
 or (nrf52_pca10040, image running from slot 1):
 
 ```
-CONFIG_FLASH_LOAD_OFFSET=0x41000
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x41200
+# Available space: sector_size - one sector for swap - 0x200 for header
+CONFIG_FLASH_LOAD_SIZE=0x38E00
 ```
 
 ```
