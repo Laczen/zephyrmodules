@@ -7,6 +7,7 @@
 
 config SFCB
 	bool "Simple/Secure/Small Flash Circular Buffer - SFCB"
+	depends on FLASH_PAGE_LAYOUT
 	help
 	  Enable support of SFCB.
 
@@ -36,16 +37,6 @@ config SFCB_ATE_CACHE_SIZE
 	  then searched for a next ate. If the cache is exhausted a next read
 	  from flash is performed. The cache size is internally limited to 128
 	  bytes.
-
-config SFCB_ENABLE_CFG_CHECK
-	bool "SFCB enable configuration check"
-	depends on FLASH_PAGE_LAYOUT
-	default y
-	help
-	  When SFCB mounts a file system the supplied configuration is checked.
-	  This is especially good during development but takes code space. Once
-	  you are sure that the configuration is good you can disable the
-	  configuration check. Leave enabled if unsure.
 
 config SFCB_FLASH_SUPPORTS_UNALIGNED_READ
 	bool "SFCB flash backend supports unaligned read"

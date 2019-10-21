@@ -19,6 +19,7 @@ extern "C" {
 #include <crc.h>
 
 #define SFCB_BLOCK_SIZE 32
+#define SFCB_MIN_SECTOR_SIZE 1024
 
 /* Check that CONFIG_SFCB_WBS is power of 2 */
 BUILD_ASSERT_MSG(((CONFIG_SFCB_WBS != 0) &&
@@ -46,18 +47,13 @@ typedef struct sfcb_fs sfcb_fs;
 /**
  * @brief SFCB File system configuration structure
  *
- * The SFCB file system is divided into sectors. As each sector is erased in one
- * operation the sector size should be a multiple of the flash page erase.
- *
  * @param offset: file system offset
- * @param sector_size: size of a sector
- * @param sector_cnt: number of sectors in file system
+ * @param size: size available to the filesystem
  * @param dev_name: name of the flash device
  */
 typedef struct {
 	off_t offset;
-	u16_t sector_size;
-	u16_t sector_cnt;
+	size_t size;
 	char *dev_name;
 } sfcb_fs_cfg;
 
@@ -132,6 +128,8 @@ typedef struct {
  * @param wr_sector_id: write sector id
  * @param data_wr_offset: data write offset in sector
  * @param ate_wr_offset: ATE write offset in sector
+ * @param sector_size:  sector size
+ * @param sector_cnt: sector count
  * @param flash_device: flash device, set to NULL in case of cfg error
  * @param wr_lock: mutex locked during write
  * @param compress: pointer to garbage collection routine supplied by user
@@ -142,6 +140,8 @@ struct sfcb_fs {
 	u16_t wr_sector_id;
 	u16_t wr_data_offset;
 	u16_t wr_ate_offset;
+	u16_t sector_size;
+	u16_t sector_cnt;
 	struct device *flash_device;
 	struct k_mutex mutex;
 	int (*compress)(sfcb_fs *fs);

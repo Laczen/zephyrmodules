@@ -10,58 +10,44 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-//#define DT_FLASH_SIM_ERASE_BLOCK_SIZE DT_FLASH_ERASE_BLOCK_SIZE
-
 const sfcb_fs_cfg cfg = {
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
 const sfcb_fs_cfg cfg2sector = {
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = 2,
+	.size = 2 * DT_FLASH_ERASE_BLOCK_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
 const sfcb_fs_cfg cfg1sector = {
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = 1,
+	.size = DT_FLASH_ERASE_BLOCK_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
 const sfcb_fs_cfg badcfg1 = { /* missing dev name */
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE,
 };
 
 const sfcb_fs_cfg badcfg2 = { /* unaligned offset */
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET - 1,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
 const sfcb_fs_cfg badcfg3 = { /* unaligned sector size */
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE - 1,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE - 1,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
-const sfcb_fs_cfg badcfg4 = { /* wrong sector size */
+const sfcb_fs_cfg badcfg4 = { /* wrong size */
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = 0,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = 0,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
@@ -74,7 +60,6 @@ void test_sfcb_mount(void)
 {
 	int rc;
 
-#if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
 	sfcb.cfg = &badcfg1;
 	rc = sfcb_mount(&sfcb);
 	zassert_false(rc == 0, "Mount succeeded for bad config");
@@ -90,7 +75,6 @@ void test_sfcb_mount(void)
 	sfcb.cfg = &badcfg4;
 	rc = sfcb_mount(&sfcb);
 	zassert_false(rc == 0, "Mount succeeded for bad config");
-#endif /* IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK) */
 
 	sfcb.cfg = &cfg;
 	rc = sfcb_format(&sfcb);
@@ -131,7 +115,7 @@ void test_sfcb_loc(void)
 	rc = sfcb_close_loc(&loc);
 	zassert_true(rc == 0, "close loc failed [%d]", rc);
 
-	exp_offset = cfg.sector_size;
+	exp_offset = sfcb.sector_size;
 	exp_offset -= (2 * SFCB_ATE_SIZE);
 	zassert_true(sfcb.wr_ate_offset == exp_offset, "Wrong ate offset");
 
@@ -145,7 +129,7 @@ void test_sfcb_loc(void)
 	rc = sfcb_mount(&sfcb);
 	zassert_true(rc == 0, "Mount failed [%d]", rc);
 
-	exp_offset = cfg.sector_size;
+	exp_offset = sfcb.sector_size;
 	exp_offset -= (2 * SFCB_ATE_SIZE);
 	zassert_true(sfcb.wr_ate_offset == exp_offset, "Wrong ate offset");
 
@@ -159,7 +143,7 @@ void test_sfcb_loc(void)
 		rc = sfcb_close_loc(&loc);
 		zassert_true(rc == 0, "close loc failed [%d]", rc);
 	}
-	exp_offset = cfg.sector_size;
+	exp_offset = sfcb.sector_size;
 	exp_offset -= (2 * SFCB_ATE_SIZE);
 	zassert_true(sfcb.wr_ate_offset == exp_offset, "Wrong ate offset");
 
@@ -175,7 +159,7 @@ void test_sfcb_loc(void)
 
 	zassert_true(sfcb.wr_sector == exp_sector, "Wrong sector");
 
-	exp_offset = cfg.sector_size;
+	exp_offset = sfcb.sector_size;
 	exp_offset -= (2 * SFCB_ATE_SIZE);
 	zassert_true(sfcb.wr_ate_offset == exp_offset, "Wrong ate offset");
 
@@ -206,7 +190,7 @@ void test_sfcb_loc_first(void) {
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
-	rc = loc.ate_offset - (cfg.sector_size - SFCB_ATE_SIZE);
+	rc = loc.ate_offset - (sfcb.sector_size - SFCB_ATE_SIZE);
 	zassert_true(rc == 0, "first loc wrong offset");
 
 	rc = sfcb_unmount(&sfcb);
@@ -223,7 +207,7 @@ void test_sfcb_loc_first(void) {
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
-	rc = loc.ate_offset - (cfg.sector_size - SFCB_ATE_SIZE);
+	rc = loc.ate_offset - (sfcb.sector_size - SFCB_ATE_SIZE);
 	zassert_true(rc == 0, "first loc wrong offset");
 
 	rc = sfcb_unmount(&sfcb);
@@ -240,7 +224,7 @@ void test_sfcb_loc_first(void) {
 	zassert_true(rc == 0, "first loc failed");
 	rc = loc.sector - 0U;
 	zassert_true(rc == 0, "first loc wrong sector");
-	rc = loc.ate_offset - (cfg.sector_size - SFCB_ATE_SIZE);
+	rc = loc.ate_offset - (sfcb.sector_size - SFCB_ATE_SIZE);
 	zassert_true(rc == 0, "first loc wrong offset");
 
 	rc = sfcb_unmount(&sfcb);
@@ -590,7 +574,7 @@ void test_sfcb_compress(void)
 	data_id = 0;
 
 	/* writing data until we trigger compress routine */
-	while (scnt < (cfg.sector_cnt - 1)) {
+	while (scnt < (sfcb.sector_cnt - 1)) {
 		rc = sfcb_open_loc(&sfcb, &loc, data_id, sizeof(data));
 		zassert_true(rc == 0, "open loc failed [%d]", rc);
 		rc = sfcb_write_loc(&loc, data, sizeof(data));

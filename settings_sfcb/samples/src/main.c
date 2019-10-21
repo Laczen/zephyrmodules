@@ -14,11 +14,7 @@ static int set(const char *name, size_t len, settings_read_cb read_cb,
 	int rc;
 	const char *next;
 
-    if (!len) {
-        printk("Ooh a deleted item\n");
-        return 0;
-    }
-	if (settings_name_steq(name, "bc", &next) && !next) {
+    if (settings_name_steq(name, "bc", &next) && !next) {
 		rc = read_cb(cb_arg, &boot_count, sizeof(boot_count));
 		return 0;
 	}
@@ -44,7 +40,7 @@ int main(void) {
         printk("bootcount: %d\n", boot_count);
     }
 
-    while (settings_sfcb.wr_sector != (settings_sfcb.cfg->sector_cnt - 1)) {
+    while (settings_sfcb.wr_sector != (settings_sfcb.sector_cnt - 1)) {
         rc = settings_save_one("ps/bd", &boot_count, sizeof(boot_count));
     }
 

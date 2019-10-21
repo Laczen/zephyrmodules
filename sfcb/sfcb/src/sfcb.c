@@ -46,7 +46,7 @@ static int sfcb_flash_write(sfcb_fs *fs, u16_t sec, u16_t sec_off,
 	const void *data, size_t len, u8_t *cache)
 {
 	const u8_t *data8 = (const u8_t *)data;
-	off_t off = fs->cfg->offset + sec * fs->cfg->sector_size + sec_off;
+	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
 	int rc = 0;
 
 	if (!len) {
@@ -77,7 +77,7 @@ static int sfcb_flash_write(sfcb_fs *fs, u16_t sec, u16_t sec_off,
 	const void *data, size_t len, u8_t *cache)
 {
 	const u8_t *data8 = (const u8_t *)data;
-	off_t off = fs->cfg->offset + sec * fs->cfg->sector_size + sec_off;
+	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
 	u16_t cnt = 0, rem;
 	bool fp_dis = false;
 	int rc = 0;
@@ -158,7 +158,7 @@ static int sfcb_flash_read(sfcb_fs *fs, u16_t sec, u16_t sec_off, void *data,
 			   size_t len)
 {
 	u8_t *data8 = (u8_t *)data;
-	off_t off = fs->cfg->offset + sec * fs->cfg->sector_size + sec_off;
+	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
 
 	if (!len) {
 		return 0;
@@ -177,7 +177,7 @@ static int sfcb_flash_read(sfcb_fs *fs, u16_t sec, u16_t sec_off, void *data,
 			   size_t len)
 {
 	u8_t *data8 = (u8_t *)data, buf[CONFIG_SFCB_WBS];
-	off_t off = fs->cfg->offset + sec * fs->cfg->sector_size + sec_off;
+	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
 	u16_t cnt, rem;
 	int rc;
 
@@ -248,10 +248,10 @@ static int sfcb_flash_sector_erase(sfcb_fs *fs, u16_t sector)
 		return -ENXIO;
 	}
 
-	offset = fs->cfg->offset + sector * fs->cfg->sector_size;
+	offset = fs->cfg->offset + sector * fs->sector_size;
 
 	LOG_DBG("Erasing flash sector at %lx", (long int) offset);
-	if (flash_erase(fs->flash_device, offset, fs->cfg->sector_size)) {
+	if (flash_erase(fs->flash_device, offset, fs->sector_size)) {
 		return -ENXIO;
 	}
 
@@ -320,14 +320,14 @@ static int sfcb_flash_read_crc8_verify(sfcb_fs *fs, u16_t sec, u16_t sec_off,
 
 void sfcb_next_sector(sfcb_fs *fs, u16_t *sector) {
 	*sector += 1U;
-	if (*sector == fs->cfg->sector_cnt) {
+	if (*sector == fs->sector_cnt) {
 		*sector = 0U;
 	}
 }
 
 void sfcb_prev_sector(sfcb_fs *fs, u16_t *sector) {
 	if (*sector == 0) {
-		*sector = fs->cfg->sector_cnt;
+		*sector = fs->sector_cnt;
 	}
 	*sector -= 1U;
 }
@@ -390,7 +390,7 @@ int sfcb_next_loc(sfcb_loc *loc)
 			}
 			/* sector end */
 			sfcb_next_sector(loc->fs, &loc->sector);
-			loc->ate_offset = loc->fs->cfg->sector_size;
+			loc->ate_offset = loc->fs->sector_size;
 #if (CONFIG_SFCB_ATE_CACHE_SIZE !=1)
 			loc->ate_cache_offset = 0;
 #endif
@@ -417,7 +417,7 @@ int sfcb_start_loc(sfcb_fs *fs, sfcb_loc *loc)
 	loc->fs = fs;
 	loc->sector = fs->wr_sector;
 	sfcb_next_sector(fs, &loc->sector);
-	loc->ate_offset = fs->cfg->sector_size;
+	loc->ate_offset = fs->sector_size;
 #if (CONFIG_SFCB_ATE_CACHE_SIZE !=1)
 	loc->ate_cache_offset = 0;
 #endif
@@ -456,7 +456,7 @@ static int sfcb_init_sector(sfcb_fs *fs)
 	}
 
 	fs->wr_sector_id++;
-	fs->wr_ate_offset = fs->cfg->sector_size - SFCB_ATE_SIZE;
+	fs->wr_ate_offset = fs->sector_size - SFCB_ATE_SIZE;
 	fs->wr_data_offset = SFCB_SEC_START_SIZE;
 
 	return 0;
@@ -479,15 +479,13 @@ static int sfcb_new_sector(sfcb_fs *fs)
 	return rc;
 }
 
-#if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
-static int sfcb_config_check(sfcb_fs *fs)
+static int sfcb_config_init(sfcb_fs *fs)
 {
 	u8_t wbs;
 	struct flash_pages_info info;
 	off_t page_off, end;
 
-	if ((!fs) || (!fs->cfg->dev_name) || (!fs->cfg->sector_size) ||
-		(!fs->cfg->sector_cnt)) {
+	if ((!fs) || (!fs->cfg->dev_name) || (!fs->cfg->size)) {
 		LOG_ERR("Cfg error - missing configuration items");
 		return -EINVAL;
 	}
@@ -505,9 +503,10 @@ static int sfcb_config_check(sfcb_fs *fs)
 		goto ERR;
 	}
 
+	fs->sector_size = SFCB_MIN_SECTOR_SIZE;
 	/* Check flash page size and offset */
 	page_off = fs->cfg->offset;
-	end = page_off + fs->cfg->sector_cnt * fs->cfg->sector_size;
+	end = page_off + fs->cfg->size;
 
 	while (page_off < end) {
 
@@ -522,14 +521,23 @@ static int sfcb_config_check(sfcb_fs *fs)
 			goto ERR;
 		}
 
-		if (fs->cfg->sector_size % info.size) {
-			LOG_ERR("Cfg error - sector size not page aligned");
+		if (info.size > UINT16_MAX) {
+			LOG_ERR("Cfg error - flash sector to large");
 			goto ERR;
-
 		}
+
+		if (info.size > fs->sector_size) {
+			fs->sector_size = info.size;
+		}
+
 		page_off += info.size;
 	}
 
+	fs->sector_cnt = fs->cfg->size / fs->sector_size;
+	if (fs->compress && (fs->sector_cnt < 2)) {
+		LOG_ERR("Cfg error - insufficient sectors for compress");
+		goto ERR;
+	}
 	fs->flash_device = NULL;
 	return 0;
 
@@ -537,7 +545,6 @@ ERR:
 	fs->flash_device = NULL;
 	return -EINVAL;
 }
-#endif /* IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK) */
 
 static int sfcb_fs_check(sfcb_fs *fs) {
 	int rc = 0;
@@ -548,16 +555,16 @@ static int sfcb_fs_check(sfcb_fs *fs) {
 		return -EINVAL;
 	}
 
-	fs->wr_sector = fs->cfg->sector_cnt;
+	fs->wr_sector = fs->sector_cnt;
 	fs->wr_sector_id = 0U;
 
-	for (i = 0; i < fs->cfg->sector_cnt; i++) {
+	for (i = 0; i < fs->sector_cnt; i++) {
 		/* search for last sector */
 		rc = sfcb_flash_read_crc8_verify(fs, i, 0, &sec_start,
 			SFCB_SEC_START_SIZE);
 
 		if (!rc) {
-			if (fs->wr_sector == fs->cfg->sector_cnt) {
+			if (fs->wr_sector == fs->sector_cnt) {
 				fs->wr_sector_id = sec_start.sec_id;
 				fs->wr_sector = i;
 			}
@@ -573,7 +580,7 @@ static int sfcb_fs_check(sfcb_fs *fs) {
 		}
 	}
 
-	if (fs->wr_sector == fs->cfg->sector_cnt) {
+	if (fs->wr_sector == fs->sector_cnt) {
 		/* This is not a sfcb FS or it is empty */
 		return -EACCES;
 	}
@@ -595,20 +602,18 @@ int sfcb_format(sfcb_fs *fs)
 		return -EBUSY;
 	}
 
-#if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
-	rc = sfcb_config_check(fs);
+	rc = sfcb_config_init(fs);
 	if (rc) {
 		return rc;
 	}
-#endif /* IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK) */
 
 	fs->flash_device = device_get_binding(fs->cfg->dev_name);
 
-	for (i = 0; i < fs->cfg->sector_cnt; i++) {
+	for (i = 0; i < fs->sector_cnt; i++) {
 		/* erase sector 0 and all sectors that do not have empty first
 		 * ATE
 		 */
-		rc = sfcb_flash_read(fs, i, fs->cfg->sector_size -
+		rc = sfcb_flash_read(fs, i, fs->sector_size -
 			SFCB_ATE_SIZE, &ate, SFCB_ATE_SIZE);
 		if (rc) {
 			goto END;
@@ -646,7 +651,7 @@ int sfcb_fs_init(sfcb_fs *fs)
 	}
 
 	fs->wr_sector_id++;
-	fs->wr_ate_offset = fs->cfg->sector_size;
+	fs->wr_ate_offset = fs->sector_size;
 	fs->wr_data_offset = SFCB_SEC_START_SIZE;
 
 	/* update wr_ate_offset */
@@ -693,7 +698,7 @@ int sfcb_fs_init(sfcb_fs *fs)
 		fs->wr_data_offset = data_offset;
 	}
 
-	if (fs->compress && (fs->cfg->sector_cnt > 1)) {
+	if (fs->compress && (fs->sector_cnt > 1)) {
 		/* compress might have been interrupted call it again, if it
 		 * fails (this will be due to insufficient space) erase the
 		 * current write sector and restart compress */
@@ -732,12 +737,11 @@ int sfcb_mount(sfcb_fs *fs)
 	k_mutex_init(&fs->mutex);
 
 	sfcb_lock(fs);
-#if IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK)
-	rc = sfcb_config_check(fs);
+
+	rc = sfcb_config_init(fs);
 	if (rc) {
 		return rc;
 	}
-#endif /* IS_ENABLED(CONFIG_SFCB_ENABLE_CFG_CHECK) */
 
 	fs->flash_device = device_get_binding(fs->cfg->dev_name);
 	rc = sfcb_fs_check(fs);
@@ -820,13 +824,13 @@ int sfcb_open_loc(sfcb_fs *fs, sfcb_loc *loc, u16_t id, u16_t len)
 			return rc;
 		}
 		/* call gc */
-		if (fs->compress && (fs->cfg->sector_cnt > 1)) {
+		if (fs->compress && (fs->sector_cnt > 1)) {
 			sfcb_lock(fs);
 			rc = fs->compress(fs);
 			sfcb_unlock(fs);
 		}
 		nscnt++;
-		if (nscnt == fs->cfg->sector_cnt) {
+		if (nscnt == fs->sector_cnt) {
 			return -ENOMEM;
 		}
 	}

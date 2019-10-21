@@ -58,18 +58,83 @@ int settings_sfcb_dst(struct settings_sfcb *cf)
 	return 0;
 }
 
+/**
+ * @brief settings_sfcb_read_name
+ *
+ * Reads the name from a location and returns the name length
+ *
+ * @param loc: Pointer to location
+ * @param name: buffer to store name in
+ * @param name buffer length
+ * @retval >=0: OK
+ * @retval < 0: -ERRCODE
+ */
+static int settings_sfcb_read_name(sfcb_loc *loc, char *name, size_t len)
+{
+	ssize_t rc, i;
+
+	rc = sfcb_read_loc(loc, name, len);
+	if (rc < 0) {
+		return rc;
+	}
+
+	for (i = 0; i < rc; i++) {
+		if (name[i] == '=') {
+			name[i] = '\0';
+			break;
+		}
+	}
+
+	if (i == rc) {
+		return -ENODATA;
+	}
+	return i;
+}
+
+/**
+ * @brief settings_sfcb_check_duplicate
+ *
+ * Searches for entries that use the same name, starting from loc
+ *
+ * @param loc: Pointer to location
+ * @retval true: a later entry with the same name exists
+ * @retval false: a later entry with the same name does not exist
+ */
+static bool settings_sfcb_check_duplicate(const sfcb_loc *loc,
+	const char * const name)
+{
+	sfcb_loc loc1;
+
+	loc1 = *loc;
+	while (!sfcb_next_loc(&loc1)) {
+		sfcb_ate *ate1;
+		u8_t name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+
+		ate1 = sfcb_get_ate(&loc1);
+		if (ate1->id != SETTINGS_SFCB_ID) {
+			continue;
+		}
+
+		if (settings_sfcb_read_name(&loc1, name1, sizeof(name1)) <= 0) {
+			continue;
+		}
+
+		if (!strcmp(name, name1)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static int settings_sfcb_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg)
 {
+	int rc;
 	struct settings_sfcb *cf = (struct settings_sfcb *)cs;
 	struct settings_sfcb_read_fn_arg read_fn_arg;
+	sfcb_ate *load_ate;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
-	char wdata[CONFIG_SFCB_WBS];
-	char *np, *wp;
-	int name_end, rc, val_len, i;
-	sfcb_ate *load_ate, *walk_ate;
-	sfcb_loc walk_loc;
-	bool load;
+	int name_len, val_len;
 
 	rc = sfcb_start_loc(cf->cf_sfcb, &read_fn_arg.loc);
 	if (rc) {
@@ -83,84 +148,28 @@ static int settings_sfcb_load(struct settings_store *cs,
 			continue;
 		}
 
-		/* In the sfcb backend each setting item is stored as:
-		 * name=value
-		 */
-		rc = sfcb_read_loc(&read_fn_arg.loc, &name, sizeof(name));
-		if (rc < 0) {
-			continue;
-		}
-		name_end = 0;
-		while ((name[name_end] != '=') && (name_end < rc)) {
-			name_end++;
-		}
-		if (name_end == rc) {
-			/* no '=' found */
+		name_len = settings_sfcb_read_name(&read_fn_arg.loc, name,
+			sizeof(name));
+		if (name_len < 0) {
 			continue;
 		}
 
-		load = true;
-		/* If a later match is found delay the loading */
-		walk_loc = read_fn_arg.loc;
-		while (!sfcb_next_loc(&walk_loc)) {
-			walk_ate = sfcb_get_ate(&walk_loc);
-			if (walk_ate->id != SETTINGS_SFCB_ID) {
-				continue;
-			}
-			np = name;
-			while (1) {
-				rc = sfcb_read_loc(&walk_loc, &wdata,
-					CONFIG_SFCB_WBS);
-				if (!rc) {
-					break;
-				}
-				wp = wdata;
-				for (i = 0; i < rc; i++) {
-					if (*wp != *np) {
-						break;
-					}
-					if ((*wp == '=') || (*np == '=')) {
-						break;
-					}
-					wp++;
-					np++;
-				}
-				if (i == CONFIG_SFCB_WBS) {
-					continue;
-				}
-				if (*wp != *np) {
-					/* quit early when the walk location
-					 * has no information about the load
-					 */
-					break;
-				}
-				if (*np == '=') {
-					/* we have found the same variable */
-					load = false;
-					break;
-				}
-			}
-			if (!load) {
-				break;
-			}
+		val_len = load_ate->len - name_len - 1;
+		if (!val_len) {
+			continue;
 		}
 
-		val_len = load_ate->len - name_end - 1;
-		/* Only call set handler when last entry is found and it is not
-		 * deleted.
-		 */
-		if (load && val_len) {
-			name[name_end] = '\0';
-			/* set the read position just after '=' */
-			sfcb_setpos_loc(&read_fn_arg.loc, name_end + 1);
-			rc = settings_call_set_handler(name, val_len,
-				settings_sfcb_read_fn, &read_fn_arg,
-				(void *)arg);
-			if (rc) {
-				break;
-			}
+		if (settings_sfcb_check_duplicate(&read_fn_arg.loc, name)) {
+			continue;
 		}
 
+		/* set the read position just after '=' */
+		sfcb_setpos_loc(&read_fn_arg.loc, name_len + 1);
+		rc = settings_call_set_handler(name, val_len,
+			settings_sfcb_read_fn, &read_fn_arg, (void *)arg);
+		if (rc) {
+			break;
+		}
 	}
 	return 0;
 }
@@ -191,94 +200,55 @@ static int settings_sfcb_save(struct settings_store *cs, const char *name,
 
 int settings_sfcb_compress(sfcb_fs *fs)
 {
-	int rc, rc1, rc2, i;
-	sfcb_loc loc_compress, loc_walk;
-	sfcb_ate *ate_compress, *ate_walk;
-	bool copy;
+	int rc;
 	u16_t compress_sector;
-	u8_t cdata[CONFIG_SFCB_WBS], wdata[CONFIG_SFCB_WBS];
-	u8_t *cdp, *wdp;
+	sfcb_loc loc_compress;
+	sfcb_ate *ate_compress;
+	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	int name_len, val_len;
 
-	rc = sfcb_start_loc(fs, &loc_compress);
-	if (rc) {
-		return rc;
-	}
-	rc = sfcb_next_loc(&loc_compress);
-	if (rc) {
-		return rc;
-	}
 	rc = sfcb_compress_sector(fs, &compress_sector);
 	if (rc) {
 		return rc;
 	}
 
-	while (loc_compress.sector == compress_sector) {
+	rc = sfcb_start_loc(fs, &loc_compress);
+	if (rc) {
+		return rc;
+	}
 
-		copy = true;
+	while (sfcb_next_loc(&loc_compress)) {
+
+		if (loc_compress.sector != compress_sector) {
+			break;
+		}
+
 		ate_compress = sfcb_get_ate(&loc_compress);
 		if (ate_compress->id != SETTINGS_SFCB_ID) {
 			continue;
 		}
 
-		loc_walk = loc_compress;
-		while (!sfcb_next_loc(&loc_walk)) {
-			ate_walk = sfcb_get_ate(&loc_walk);
-			if (ate_walk->id != SETTINGS_SFCB_ID) {
-				continue;
-			}
-			while (1) {
-				rc1 = sfcb_read_loc(&loc_compress, &cdata,
-					CONFIG_SFCB_WBS);
-				rc2 = sfcb_read_loc(&loc_walk, &wdata,
-					CONFIG_SFCB_WBS);
-				rc = MIN(rc1, rc2);
-				if (!rc) {
-					break;
-				}
-				cdp = cdata;
-				wdp = wdata;
-				for (i = 0; i < rc; i++) {
-					if (*wdp != *cdp) {
-						break;
-					}
-					if ((*cdp == '=') || (*wdp == '=')) {
-						break;
-					}
-					cdp++;
-					wdp++;
-				}
-				if (i == CONFIG_SFCB_WBS) {
-					continue;
-				}
-				if (*wdp != *cdp) {
-					/* quit early when the walk location
-					 * has no information about the compress
-					 */
-					break;
-				}
-				if (*cdp == '=') {
-					/* we have found the same variable */
-					copy = false;
-					break;
-				}
-			}
-			if (!copy) {
-				break;
-			}
-			(void)sfcb_rewind_loc(&loc_compress);
+		name_len = settings_sfcb_read_name(&loc_compress, name,
+			sizeof(name));
+		if (name_len < 0) {
+			continue;
 		}
 
-		if ((copy) && (ate_compress->len)) {
-			rc = sfcb_copy_loc(&loc_compress);
-			if (rc) {
-				return rc;
-			}
+		val_len = ate_compress->len - name_len - 1;
+		if (!val_len) {
+			continue;
 		}
 
-		if (sfcb_next_loc(&loc_compress)) {
-			break;
+		if (settings_sfcb_check_duplicate(&loc_compress, name)) {
+			continue;
+		}
+
+		rc = sfcb_copy_loc(&loc_compress);
+		if (rc) {
+			return rc;
 		}
 	}
+
 	return 0;
 }
 
@@ -298,9 +268,7 @@ int settings_sfcb_backend_init(struct settings_sfcb *cf)
 
 const sfcb_fs_cfg settings_sfcb_cfg = {
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 

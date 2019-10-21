@@ -12,9 +12,7 @@ sfcb_fs sfcb;
 // configuration of the filesystem is provided by this struct
 const sfcb_fs_cfg cfg = {
 	.offset = DT_FLASH_AREA_STORAGE_OFFSET,
-	.sector_size = DT_FLASH_ERASE_BLOCK_SIZE,
-	.sector_cnt = DT_FLASH_AREA_STORAGE_SIZE /
-		      DT_FLASH_ERASE_BLOCK_SIZE,
+	.size = DT_FLASH_AREA_STORAGE_SIZE,
 	.dev_name = DT_FLASH_AREA_STORAGE_DEV,
 };
 
