@@ -132,7 +132,7 @@ typedef struct {
  * @param sector_cnt: sector count
  * @param flash_device: flash device, set to NULL in case of cfg error
  * @param wr_lock: mutex locked during write
- * @param compress: pointer to garbage collection routine supplied by user
+ * @param compress: pointer to compress routine supplied by user
  * @param cfg: file system configuration
  */
 struct sfcb_fs {

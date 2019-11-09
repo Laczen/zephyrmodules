@@ -7,7 +7,9 @@
 
 config SFCB
 	bool "Simple/Secure/Small Flash Circular Buffer - SFCB"
-	depends on FLASH_PAGE_LAYOUT
+	select FLASH
+	select FLASH_PAGE_LAYOUT
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable support of SFCB.
 
@@ -20,7 +22,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config SFCB_WBS
 	int "SFCB write block size"
 	range 1 128
-	default 8
+	default 4
 	help
 	  SFCB will align writes to this size, it should be a power of 2 and a
 	  multiple of the flash device write block size. Set it as low as
@@ -37,19 +39,5 @@ config SFCB_ATE_CACHE_SIZE
 	  then searched for a next ate. If the cache is exhausted a next read
 	  from flash is performed. The cache size is internally limited to 128
 	  bytes.
-
-config SFCB_FLASH_SUPPORTS_UNALIGNED_READ
-	bool "SFCB flash backend supports unaligned read"
-	default n
-	help
-	  When the flash used supports unaligned reads SFCB can use this,
-	  enabling this option will reduce code. Leave disabled if unsure.
-
-config SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE
-	bool "SFCB flash backend supports unaligned write"
-	default n
-	help
-	  When the flash used supports unaligned writes SFCB can use this,
-	  enabling this option will reduce code. Leave disabled if unsure.
 
 endif # SFCB

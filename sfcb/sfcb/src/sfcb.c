@@ -41,34 +41,6 @@ static inline s16_t sfcb_scmp(u16_t a, u16_t b) {
     return (s16_t)(a - b);
 }
 
-#if IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE)
-static int sfcb_flash_write(sfcb_fs *fs, u16_t sec, u16_t sec_off,
-	const void *data, size_t len, u8_t *cache)
-{
-	const u8_t *data8 = (const u8_t *)data;
-	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
-	int rc = 0;
-
-	if (!len) {
-		return 0;
-	}
-
-	if ((!fs) || (!fs->flash_device) || (!data && len)) {
-		return -EINVAL;
-	}
-
-	rc = flash_write_protection_set(fs->flash_device, 0);
-	if (rc) {
-		return rc;
-	}
-
-	rc = flash_write(fs->flash_device, off, data8, len);
-
-	(void)flash_write_protection_set(fs->flash_device, 0);
-	return rc;
-
-}
-#else /* No unaligned write */
 /*
  * Unaligned write using a cache to read from at unaligned start and to store
  * remainder at unaligned end.
@@ -150,10 +122,8 @@ END:
 
 	return rc;
 }
-#endif /* IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_WRITE) */
 
-#if IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_READ)
-
+/* sfcb_flash_read assumes unaligned reads are possible */
 static int sfcb_flash_read(sfcb_fs *fs, u16_t sec, u16_t sec_off, void *data,
 			   size_t len)
 {
@@ -170,71 +140,6 @@ static int sfcb_flash_read(sfcb_fs *fs, u16_t sec, u16_t sec_off, void *data,
 
 	return flash_read(fs->flash_device, off, data8, len);
 }
-
-#else /* No unaligned reads */
-
-static int sfcb_flash_read(sfcb_fs *fs, u16_t sec, u16_t sec_off, void *data,
-			   size_t len)
-{
-	u8_t *data8 = (u8_t *)data, buf[CONFIG_SFCB_WBS];
-	off_t off = fs->cfg->offset + sec * fs->sector_size + sec_off;
-	u16_t cnt, rem;
-	int rc;
-
-	if (!len) {
-		return 0;
-	}
-
-	if ((!fs) || (!fs->flash_device) || (!data && len)) {
-		return -EINVAL;
-	}
-
-	rem = sec_off & (CONFIG_SFCB_WBS - 1U);
-	off -= rem;
-	/* Unaligned start */
-	if (rem) {
-		cnt = CONFIG_SFCB_WBS - rem;
-		if (cnt > len) {
-			cnt = len;
-		}
-		rc = flash_read(fs->flash_device, off, buf, CONFIG_SFCB_WBS);
-		if (rc) {
-			return rc;
-		}
-		memcpy(data8, buf + rem, cnt);
-		len -= cnt;
-		off += CONFIG_SFCB_WBS;
-		data8 += cnt;
-	}
-
-	if (!len) {
-		return 0;
-	}
-
-	/* Aligned read */
-	cnt = len & ~(CONFIG_SFCB_WBS - 1U);
-	if (cnt) {
-		rc = flash_read(fs->flash_device, off, data8, cnt);
-		if (rc) {
-			return rc;
-		}
-		len -= cnt;
-		off += cnt;
-		data8 += cnt;
-	}
-
-	/* Unaligned remainder */
-	if (len) {
-		rc = flash_read(fs->flash_device, off, buf, CONFIG_SFCB_WBS);
-		if (rc) {
-			return rc;
-		}
-		memcpy(data8, buf, len);
-	}
-
-	return 0;
-}
-#endif /* IS_ENABLED(CONFIG_SFCB_FLASH_SUPPORTS_UNALIGNED_READ) */
 
 static int sfcb_flash_sector_erase(sfcb_fs *fs, u16_t sector)
 {
