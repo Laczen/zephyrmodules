@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2019 Laczen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash_sim0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		fsl_partition: partition@0 {
+			label = "fsl";
+			reg = <0x00000000 0x0001000>;
+		};
+
+		boot_partition: partition@1000 {
+			label = "boot";
+			reg = <0x00001000 0x0004000>;
+		};
+
+		storage_partition: partition@5000 {
+			label = "storage";
+			reg = <0x00005000 0x0009000>;
+		};
+
+		run0_partition: partition@10000 {
+			label = "run-0";
+			reg = <0x00010000 0x00004000>;
+		};
+		move0_partition: partition@11000 {
+			label = "move-0";
+			reg = <0x00011000 0x00004000>;
+		};
+		upgrade0_partition: partition@15000 {
+			label = "upgrade-0";
+			reg = <0x00015000 0x00004000>;
+		};
+		swpstat0_partition: partition@19000 {
+			label = "swpstat-0";
+			reg = <0x00019000 0x001000>;
+		};
+
+		run1_partition: partition@20000 {
+			label = "run-1";
+			reg = <0x00020000 0x00004000>;
+		};
+		move1_partition: partition@21000_0 {
+			label = "move-1";
+			reg = <0x00021000 0x00004000>;
+		};
+		upgrade1_partition: partition@21000_1 {
+			label = "upgrade-1";
+			reg = <0x00021000 0x00004000>;
+		};
+		swpstat1_partition: partition@25000 {
+			label = "swpstat-1";
+			reg = <0x00025000 0x001000>;
+		};
+	};
+};

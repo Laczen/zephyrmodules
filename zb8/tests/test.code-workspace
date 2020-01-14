@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "src"
+		},
+		{
+			"path": "/home/batman/devel/zephyr/mymodules/zb8/zb8/include"
+		},
+		{
+			"path": "/home/batman/devel/zephyr/mymodules/zb8/zb8/src"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"zb_slot.h": "c"
+		}
+	}
+}

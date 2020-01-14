@@ -1,0 +1,49 @@
+# Kconfig - zb-eight - zephyr bootloader
+#
+# Copyright (c) 2019 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ZB_EIGHT
+	bool "Small secure bootloader"
+	help
+	  Enable support of zb-eight.
+
+if ZB_EIGHT
+
+module = ZB_EIGHT
+module-str = zb8
+source "subsys/logging/Kconfig.template.log_config"
+
+config ZB_EIGHT_IS_BOOTLOADER
+	bool "Enable zb8 library for a bootloader"
+	depends on ZB_EIGHT
+	select TINYCRYPT
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_ECC_DH
+	select TINYCRYPT_ECC_DSA
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CTR
+	default n
+	help
+	  Enables the zb8 library to be used for a bootloader, this selects
+	  items that are not used in case only zb8 support is needed.
+
+config ZB_EIGHT_DFU_BLOCK_BUF_SIZE
+	int "Image writer buffer size"
+	depends on ZB_EIGHT
+	range 32 4096
+	default 512
+	help
+	  Size (in Bytes) of buffer for image writer. Must be a multiple of
+	  the access alignment required by used flash driver.
+
+config ZB_EIGHT_IS_FSL
+	bool "Enable zb8 for a FSL"
+	depends on ZB_EIGHT
+	default n
+	help
+	  Enables the zb8 library to be used for a First Stage Loader.
+
+endif # ZB_EIGHT
