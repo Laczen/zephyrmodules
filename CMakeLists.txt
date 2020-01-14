@@ -3,4 +3,4 @@
 add_subdirectory_ifdef(CONFIG_SFCB sfcb)
 add_subdirectory_ifdef(CONFIG_SETTINGS_SFCB settings_sfcb)
 add_subdirectory_ifdef(CONFIG_ZEPBOOT zepboot)
-add_subdirectory_ifdef(CONFIG_ZEPBOOT_DFU zepboot_dfu)
+add_subdirectory_ifdef(CONFIG_ZB_EIGHT zb8)
