@@ -12,15 +12,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(zb8_fsl);
 
-void zb_fsl_blupgrade(struct device *run_dev, struct zb_fsl_hdr *run_hdr)
+static void zb_fsl_blupgrade(void)
 {
-#if IS_ENABLED(CONFIG_ZEPBOOT_IS_FSL)
-	struct device *bl_dev;
+#if IS_ENABLED(CONFIG_ZB_EIGHT_IS_FSL)
+	struct device *bl_dev, *run_dev;
 	u32_t offset;
 	u8_t buf[32];
 
 	bl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
-	offset = 0;
+	run_dev = device_get_binding(DT_FLASH_AREA_RUN_0_DEV);
 	/* update the bootloader */
 	(void)flash_write_protection_set(bl_dev, 0);
 
@@ -29,53 +29,22 @@ void zb_fsl_blupgrade(struct device *run_dev, struct zb_fsl_hdr *run_hdr)
 			  DT_FLASH_AREA_BOOT_SIZE);
 
 	LOG_INF("Writing new bootloader");
-	while (run_hdr->size - offset) {
+	offset = DT_FLASH_AREA_BOOT_SIZE;
+	while (offset) {
+		offset -= sizeof(buf);
 		(void)flash_read(run_dev, DT_FLASH_AREA_RUN_0_OFFSET + offset,
 				 &buf, sizeof(buf));
 		(void)flash_write(bl_dev, DT_FLASH_AREA_BOOT_OFFSET + offset,
 				  &buf, sizeof(buf));
-		offset += sizeof(buf);
 	}
 
+	(void)flash_write_protection_set(bl_dev, 1);
 	LOG_INF("Update done");
 #endif
 }
 
-void zb_fsl_boot(enum bt_type type)
+static void zb_fsl_jump(u32_t offset)
 {
-	struct zb_fsl_hdr hdr;
-	struct device *fl_dev;
-	u32_t hdr_offset;
-
-	switch(type) {
-	case FSL_SLT:
-		hdr_offset = DT_FLASH_BASE_ADDRESS;
-		fl_dev = NULL;
-		break;
-	case BOOT_SLT:
-		hdr_offset = DT_FLASH_AREA_BOOT_OFFSET;
-		fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
-		break;
-	case RUN_SLT:
-		hdr_offset = DT_FLASH_AREA_RUN_0_OFFSET;
-		fl_dev = device_get_binding(DT_FLASH_AREA_RUN_0_DEV);
-		break;
-	default:
-		return;
-	}
-
-	if (fl_dev) {
-		(void)flash_read(fl_dev, hdr_offset, &hdr,
-				 sizeof(struct zb_fsl_hdr));
-		if (hdr.hdr_info.size == 0xffff) {
-			return;
-		}
-		hdr_offset += hdr.hdr_info.size;
-
-	}
-
-	LOG_INF("Booting image at %x", hdr_offset);
-
 #if IS_ENABLED(CONFIG_ARM)
 
 	struct arm_vector_table {
@@ -83,7 +52,7 @@ void zb_fsl_boot(enum bt_type type)
 		u32_t reset;
 	} *vt;
 
-	vt = (struct arm_vector_table *)(hdr_offset);
+	vt = (struct arm_vector_table *)(offset);
 
 	irq_lock();
 
@@ -93,28 +62,78 @@ void zb_fsl_boot(enum bt_type type)
 #endif
 }
 
-enum img_type zb_fsl_get_type(struct device *fl_dev, struct zb_fsl_hdr *hdr)
+void zb_fsl_jump_fsl(void)
 {
-	u32_t off;
+	zb_fsl_jump(DT_FLASH_BASE_ADDRESS);
+}
+
+void zb_fsl_jump_boot(void)
+{
+	struct zb_fsl_hdr hdr;
+	struct device *fl_dev;
+	u32_t offset;
+
+	fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
+	offset = DT_FLASH_AREA_BOOT_OFFSET;
+
+	(void)flash_read(fl_dev, offset, &hdr, sizeof(struct zb_fsl_hdr));
+	offset += hdr.hdr_info.size;
+
+	LOG_INF("Booting image at %x", offset);
+	zb_fsl_jump(offset);
+}
+
+void zb_fsl_jump_run(void)
+{
+	struct zb_fsl_hdr hdr;
+	struct device *fl_dev;
+	u32_t offset;
+
+	fl_dev = device_get_binding(DT_FLASH_AREA_RUN_0_DEV);
+	offset = DT_FLASH_AREA_RUN_0_OFFSET;
+
+	(void)flash_read(fl_dev, offset, &hdr, sizeof(struct zb_fsl_hdr));
+	offset += hdr.hdr_info.size;
+
+	LOG_INF("Booting image at %x", offset);
+	zb_fsl_jump(offset);
+}
+
+void zb_fsl_boot(void)
+{
+	struct zb_fsl_hdr hdr;
 	struct zb_fsl_verify_hdr ver;
+	struct device *fl_dev;
+	u32_t off;
 
-	off = hdr->run_offset;
-	(void)flash_read(fl_dev, off, hdr, sizeof(struct zb_fsl_hdr));
+	fl_dev = device_get_binding(DT_FLASH_AREA_RUN_0_DEV);
 
-	off += hdr->hdr_info.size - sizeof(struct zb_fsl_verify_hdr);
+	off = DT_FLASH_AREA_RUN_0_OFFSET;
+	(void)flash_read(fl_dev, off, &hdr, sizeof(struct zb_fsl_hdr));
+
+	off += hdr.hdr_info.size - sizeof(struct zb_fsl_verify_hdr);
 	(void)flash_read(fl_dev, off, &ver, sizeof(struct zb_fsl_verify_hdr));
 
 	off += sizeof(struct zb_fsl_verify_hdr);
 
-	if ((ver.magic != FSL_VER_MAGIC) ||
-	    (zb_fsl_crc32(fl_dev, off, hdr->size) != ver.crc32)) {
-		return INVALID_IMG;
+	if ((ver.magic == FSL_VER_MAGIC) &&
+	    (zb_fsl_crc32(fl_dev, off, hdr.size) == ver.crc32)) {
+		if ((hdr.run_offset - hdr.hdr_info.size) ==
+		    DT_FLASH_AREA_BOOT_OFFSET) {
+			zb_fsl_blupgrade();
+		} else {
+			zb_fsl_jump(off);
+		}
 	}
 
-	if (hdr->run_offset == DT_FLASH_AREA_BOOT_OFFSET) {
-		return BOOT_IMG;
-	}
-	return RUN_IMG;
+	fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
+
+	off = DT_FLASH_AREA_BOOT_OFFSET;
+	(void)flash_read(fl_dev, off, &hdr, sizeof(struct zb_fsl_hdr));
+
+	off += hdr.hdr_info.size;
+
+	zb_fsl_jump(off);
 }
 
 u32_t zb_fsl_crc32(struct device *fl_dev, u32_t off, size_t len)

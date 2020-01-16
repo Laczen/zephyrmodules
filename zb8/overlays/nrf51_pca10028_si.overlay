@@ -34,27 +34,27 @@
 		};
 		boot_partition: partition@2000 {
 			label = "boot";
-			reg = <0x00002000 0x00013000>;
+			reg = <0x00002000 0x00017000>;
 		};
-		storage_partition: partition@14000 {
+		storage_partition: partition@19000 {
 			label = "storage";
-			reg = <0x00014000 0x00000C00>;
+			reg = <0x00019000 0x00000C00>;
 		};
-		swpstat0_partition: partition@14C00 {
+		swpstat0_partition: partition@19C00 {
 			label = "swpstat-0";
-			reg = <0x00014C00 0x00000400>;
+			reg = <0x00019C00 0x00000400>;
 		};
-		run0_partition: partition@15000 {
+		run0_partition: partition@1A000 {
 			label = "run-0";
-			reg = <0x00015000 0x0002A800>;
+			reg = <0x0001A000 0x00025800>;
 		};
-		move0_partition: partition@15800_0 {
+		move0_partition: partition@1A800_0 {
 			label = "move-0";
-			reg = <0x00015800 0x0002A800>;
+			reg = <0x0001A800 0x00025800>;
 		};
-		upgrade0_partition: partition@15800_1 {
+		upgrade0_partition: partition@19800_1 {
 			label = "upgrade-0";
-			reg = <0x00015800 0x0002A800>;
+			reg = <0x0001A800 0x00025800>;
 		};
 	};
 };

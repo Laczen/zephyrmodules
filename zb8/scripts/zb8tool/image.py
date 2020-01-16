@@ -89,8 +89,6 @@ class Image():
             padding = BYTE_ALIGNMENT - len(self.payload) % BYTE_ALIGNMENT
             self.payload = bytes(self.payload) + (b'\xff' * padding)
 
-        self.size = len(self.payload)
-
         if self.hdrsize == None:
             self.payload = (b'\x00' * MIN_HDRSIZE) + bytes(self.payload)
             self.hdrsize = MIN_HDRSIZE
@@ -103,6 +101,8 @@ class Image():
 
         if self.load_address == None:
             self.load_address = ih.minaddr();
+
+        self.size = len(self.payload) - self.hdrsize;
 
         self.check()
 

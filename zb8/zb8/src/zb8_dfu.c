@@ -173,10 +173,10 @@ int zb_dfu_confirm(u8_t sm_idx)
 
 void zb_dfu_restart(void)
 {
-	zb_fsl_boot(FSL_SLT);
+	zb_fsl_jump_fsl();
 }
 
 void zb_dfu_blstart(void)
 {
-	zb_fsl_boot(BOOT_SLT);
+	zb_fsl_jump_boot();
 }

@@ -3,7 +3,13 @@
 
   SPDX-License-Identifier: Apache-2.0
 -->
-# ZB-eight - A work in progress - expect rough edges
+# ZB-eight - A First Stage Loader and upgradeable bootloader
+
+**ZB-eight - A work in progress - expect rough edges**
+
+_If you need commercial support for ZB-8 do not hesitate to contact me._
+
+I will read the documentation later - take me to [getting started](./docs/getting_started.md)
 
 ## Overview
 
@@ -115,18 +121,60 @@ the image in the run slot is not allowed to replace this image.
 
 ## Where can I find what ?
 
-[./zb8](./zb8) contains the library of routines that make up ZB-8
+[./zb8](./zb8) contains the library of routines that make up ZB-8,
 
-[./fsl](./fsl) contains the First Stage Loader App
+[./fsl](./fsl) contains the First Stage Loader,
 
-[./bootloader](./bootloader) contains a classical swapping bootloader
+[./bootloaders](./bootloaders) contains a classical swapping bootloader
+[./bootloaders/swap_bootloader](./bootloaders/swap_bootloader) and a bootloader
+with ble dfu builtin
+[./bootloaders/bledfu_bootloader](./bootloaders/bledfu_bootloader),
 
-[./bledfubootloader](./bledfubootloader) contains a bootloader with ble dfu upload functionality
+[./apps](./apps) contains a sample application that provides ble dfu
+functionality [./apps/bledfuloader](./apps/bledfuloader) and a simple test
+application,
 
-[./appbledfuloader](./appbledfuloader) contains a sample app with ble dfu upload functionality
+[./tests](./tests) contains tests to validate ZB-8 routines,
 
+[./scripts](./scripts) contains tools to create images for ZB-8,
+
+## Flash layout of some example setups
+
+a. Single Image setup (smallest size)
+
+```
+-----------------------------------
+| FSL| BOOTLOADER| RUN IMAGE    |X|
+|    | with DFU  |X| UPGRADE IMAGE|
+-----------------------------------
+```
+
+b. Dual Image setup
+
+```
+-----------------------------------------------------------
+| FSL| SWAPPER| RUN IMAGE WITH DFU| UPGRADE IMAGE WITH DFU|
+-----------------------------------------------------------
+```
+
+c. Single Image with data section
+
+```
+--------------------------------------------------
+| FSL| BOOTLOADER| RUN IMAGE   |X| RUN DATA    |X|
+|    | with DFU  |X| UPLOAD IMAGE|X| UPGRADE DATA|
+--------------------------------------------------
+```
+
+d. Dual Image with data section
+
+```
+-----------------------------------------------------------------------
+| FSL| SWAPPER| RUN IMG WITH DFU| UPGRADE IMG WITH DFU| RUN DATA    |X|
+|                                                     |X| UPGRADE DATA|
+-----------------------------------------------------------------------
+```
 
 ## Documentation
-
 ~~Project documentation is located in the [docs](./docs/index.md) folder.~~
 needs updating

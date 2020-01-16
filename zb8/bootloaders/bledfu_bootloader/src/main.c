@@ -94,12 +94,16 @@ void main(void)
 {
 	int err, cnt;
 
+	LOG_INF("Welcome to ZB-8 bootloader with bledfu");
+
 	cnt = zb_slt_area_cnt();
 
 	/* Start or continue swap */
 	while ((cnt--) > 0) {
 		(void)zb_img_swap(cnt);
 	}
+
+	/* TODO Add support for RAM images */
 
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -109,8 +113,8 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 	dfu_init();
-	LOG_INF("Welcome to ZEPBOOT bledfu uploader\n");
 
+	LOG_INF("Waiting for a image...");
 	while (1) {
 		k_sleep(MSEC_PER_SEC);
 	}

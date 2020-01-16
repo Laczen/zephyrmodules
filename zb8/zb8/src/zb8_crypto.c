@@ -89,17 +89,15 @@ int zb_hash(u8_t *hash, struct zb_slt_info *info, u32_t off, size_t len)
 {
 	int rc;
 	struct tc_sha256_state_struct s;
-	uint8_t buf[HASH_BYTES]={0};
-	u32_t end;
+	u8_t buf[HASH_BYTES];
 
 	if (!tc_sha256_init(&s)) {
 		return -EFAULT;
 	}
 
-	end = off + len;
-	while (off < end) {
-		size_t buf_len = MIN(HASH_BYTES, end - off);
-		rc = zb_read(info, off, &buf, buf_len);
+	while (len) {
+		size_t buf_len = MIN(HASH_BYTES, len);
+		rc = zb_read(info, off, buf, buf_len);
 		if (rc) {
 			return rc;
 		}
@@ -108,6 +106,7 @@ int zb_hash(u8_t *hash, struct zb_slt_info *info, u32_t off, size_t len)
 			return -EFAULT;
 		}
 		off += buf_len;
+		len -= buf_len;
 	}
 
 	if (!tc_sha256_final(hash, &s)) {

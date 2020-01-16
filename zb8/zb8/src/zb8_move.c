@@ -221,15 +221,22 @@ int zb_img_swap(uint8_t sm_idx)
 			return zb_img_cmd_proc(sm_idx);
 		}
 		if (!zb_inplace_slt(sm_idx)) {
-			if (run.load_address == DT_FLASH_AREA_BOOT_OFFSET) {
+			if (run.is_bootloader) {
 				LOG_INF("Restoring after bootloader swap...");
-				zb_erase(&swpstat_slt, 0, swpstat_slt.size);
+				(void)zb_erase(&swpstat_slt, 0,
+					       swpstat_slt.size);
 				return zb_img_cmd_proc(sm_idx);
 			}
 			if (run.confirmed == false) {
-				LOG_INF("Restoring after bootloader swap...");
-				zb_erase(&swpstat_slt, 0, swpstat_slt.size);
+				LOG_INF("Restoring after temporary swap...");
+				(void)zb_erase(&swpstat_slt, 0,
+					       swpstat_slt.size);
 				return zb_img_cmd_proc(sm_idx);
+			}
+		} else {
+			if (run.is_bootloader) {
+				LOG_INF("Erasing bootloader from run slot...");
+				(void)zb_erase(&run_slt, 0, run_slt.size);
 			}
 		}
 		LOG_INF("Nothing to do ...");

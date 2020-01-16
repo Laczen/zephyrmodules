@@ -11,6 +11,8 @@
 #include <zb8/zb8_slot.h>
 
 #include <errno.h>
+#include <device.h>
+#include <flash.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(zb8_image);
@@ -25,21 +27,28 @@ static int img_check_dep(struct zb_img_dep *dep)
 	u8_t cnt;
 	struct zb_fsl_hdr hdr;
 	struct zb_slt_info slt;
+	struct device *fl_dev = NULL;
 
-	cnt = zb_slt_area_cnt();
+	LOG_INF("Dependency offset %x", dep->offset);
 
-	while (1) {
-		rc = zb_slt_open(&slt, --cnt, RUN);
-		if (slt.offset == dep->offset) {
-			break;
-		}
-		if ((cnt == 0)||(rc)) {
-			LOG_INF("Bad dependency");
-			return -EFAULT;
+	if (dep->offset == DT_FLASH_AREA_BOOT_OFFSET) {
+		fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
+	} else {
+		cnt = zb_slt_area_cnt();
+		while (cnt>0) {
+			(void)zb_slt_open(&slt, --cnt, RUN);
+			if (slt.offset == dep->offset) {
+				fl_dev = slt.fl_dev;
+			}
 		}
 	}
 
-	rc = zb_read(&slt, 0U, &hdr, sizeof(struct zb_fsl_hdr));
+	if (!fl_dev) {
+		LOG_INF("Bad dependency");
+		return -EFAULT;
+	}
+
+	rc = flash_read(fl_dev, dep->offset, &hdr, sizeof(struct zb_fsl_hdr));
 	if (rc) {
 		return rc;
 	}
@@ -85,8 +94,6 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 		return -EFAULT;
 	}
 
-	info->confirmed = false;
-
 	tsize = hdr.hdr_info.size - sizeof(struct zb_fsl_verify_hdr);
 	rc = zb_read(slt_info, tsize , &ver, sizeof(struct zb_fsl_verify_hdr));
 	if (rc) {
@@ -96,6 +103,11 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	/* Check if the image is confirmed */
 	if (ver.magic == FSL_VER_MAGIC) {
 		info->confirmed = true;
+	}
+
+	/* Check if the image is a bootloader */
+	if ((hdr.run_offset - hdr.hdr_info.size) == DT_FLASH_AREA_BOOT_OFFSET) {
+		info->is_bootloader = true;
 	}
 
 	tsize -= sizeof(sign);
@@ -146,6 +158,10 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 
 	if (!info->img_ok) {
 		rc = zb_hash(imghash, slt_info, info->start, hdr.size);
+		if (rc) {
+			LOG_DBG("HASH CALC Failure");
+			return -EFAULT;
+		}
 		if (memcmp(entry.value, imghash, HASH_BYTES)) {
 			LOG_DBG("IMG HASH INVALID");
 			return -EFAULT;
@@ -202,6 +218,8 @@ int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	info->hdr_ok = false;
 	info->img_ok = false;
 	info->dep_ok = false;
+	info->is_bootloader = false;
+	info->confirmed = false;
 
 	return img_get_info(info, slt_info, dst_slt_info);
 }
@@ -211,6 +229,8 @@ int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info)
 	info->hdr_ok = true;
 	info->img_ok = true;
 	info->dep_ok = true;
+	info->is_bootloader = false;
+	info->confirmed = false;
 
 	return img_get_info(info, slt_info, slt_info);
 }
@@ -239,8 +259,8 @@ int zb_img_confirm(struct zb_slt_info *slt_info)
 		return rc;
 	}
 
-	off += sizeof(struct zb_fsl_verify_hdr) + slt_info->offset;
-	crc32 = zb_fsl_crc32(slt_info->fl_dev, off, hdr.size);
+	crc32 = zb_fsl_crc32(slt_info->fl_dev, slt_info->offset + off +
+			     sizeof(struct zb_fsl_verify_hdr), hdr.size);
 
 	if (ver.crc32 == crc32) {
 		return 0;

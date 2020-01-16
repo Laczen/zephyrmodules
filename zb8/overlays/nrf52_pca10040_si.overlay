@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2019 Laczen
  *
+ * Overlay file for ZB-8 single image setup
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +14,7 @@
 
 / {
 	chosen {
-		zephyr,code-partition = &fsl_partition;
+		zephyr,code-partition = &run0_partition;
 	};
 };
 
@@ -28,31 +30,31 @@
 
 		fsl_partition: partition@0 {
 			label = "fsl";
-			reg = <0x00000000 0x00002000>;
+			reg = <0x00000000 0x00003000>;
 		};
-		boot_partition: partition@1000 {
+		boot_partition: partition@3000 {
 			label = "boot";
-			reg = <0x00001000 0x00004000>;
+			reg = <0x00003000 0x00017000>;
 		};
-		storage_partition: partition@5000 {
+		storage_partition: partition@1A000 {
 			label = "storage";
-			reg = <0x00005000 0x0005000>;
+			reg = <0x0001A000 0x00003000>;
 		};
-		swpstat0_partition: partition@10000 {
+		swpstat0_partition: partition@1D000 {
 			label = "swpstat-0";
-			reg = <0x000010000 0x0001000>;
+			reg = <0x0001D000 0x00001000>;
 		};
-		run0_partition: partition@11000 {
+		run0_partition: partition@1E000 {
 			label = "run-0";
-			reg = <0x00011000 0x00037000>;
+			reg = <0x0001E000 0x00061000>;
 		};
-		move0_partition: partition@12000 {
+		move0_partition: partition@1F000_0 {
 			label = "move-0";
-			reg = <0x00012000 0x00037000>;
+			reg = <0x0001F000 0x00061000>;
 		};
-		upgrade0_partition: partition@49000 {
+		upgrade0_partition: partition@1F000_1 {
 			label = "upgrade-0";
-			reg = <0x00049000 0x00037000>;
+			reg = <0x0001F000 0x00061000>;
 		};
 	};
 };

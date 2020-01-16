@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2019 Laczen
  *
+ * Overlay file for ZB-8 dual image setup
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +14,7 @@
 
 / {
 	chosen {
-		zephyr,code-partition = &fsl_partition;
+		zephyr,code-partition = &run0_partition;
 	};
 };
 
@@ -32,23 +34,27 @@
 		};
 		boot_partition: partition@2000 {
 			label = "boot";
-			reg = <0x00002000 0x00004000>;
+			reg = <0x00002000 0x00005000>;
 		};
-		swpstat0_partition: partition@6000 {
+		storage_partition: partition@7000 {
+			label = "storage";
+			reg = <0x00007000 0x00000C00>;
+		};
+		swpstat0_partition: partition@7C000 {
 			label = "swpstat-0";
-			reg = <0x00006000 0x0000800>;
+			reg = <0x00007C00 0x0000400>;
 		};
-		run0_partition: partition@6800 {
+		run0_partition: partition@8000 {
 			label = "run-0";
-			reg = <0x00006800 0x00010000>;
+			reg = <0x00008000 0x0001BC00>;
 		};
-		move0_partition: partition@6C00_0 {
+		move0_partition: partition@8800 {
 			label = "move-0";
-			reg = <0x00006C00 0x00010000>;
+			reg = <0x00008800 0x0001BC00>;
 		};
-		upgrade0_partition: partition@6C00_1 {
+		upgrade0_partition: partition@24400 {
 			label = "upgrade-0";
-			reg = <0x00006C00 0x00010000>;
+			reg = <0x00024400 0x0001BC00>;
 		};
 	};
 };
