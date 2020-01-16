@@ -12,8 +12,7 @@ line or by defining the folder as a `ZEPHYR_EXTRA_MODULES` in your own
 
 ### zb-8: a upgradeable secure bootloader for zephyr.
 
-~~### zepboot: a new secure bootloader for zephyr, an alternative for
-`mcuboot`.~~
+### ~~zepboot: a new secure bootloader for zephyr, an alternative for mcuboot.~~
 
-~~### zepboot_dfu: a (BT) dfu loader library and samples for zepboot.~~
+### ~~zepboot_dfu: a (BT) dfu loader library and samples for zepboot.~~
 
