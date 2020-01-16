@@ -10,7 +10,10 @@ line or by defining the folder as a `ZEPHYR_EXTRA_MODULES` in your own
 
 ### settings_sfcb: sfcb backend support for settings.
 
-### zepboot: a new secure bootloader for zephyr, an alternative for `mcuboot`.
+### zb-8: a upgradeable secure bootloader for zephyr.
 
-### zepboot_dfu: a (BT) dfu loader library and samples for zepboot.
+~~### zepboot: a new secure bootloader for zephyr, an alternative for
+`mcuboot`.~~
+
+~~### zepboot_dfu: a (BT) dfu loader library and samples for zepboot.~~
 

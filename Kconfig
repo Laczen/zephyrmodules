@@ -7,5 +7,4 @@
 
 rsource "./sfcb/Kconfig"
 rsource "./settings_sfcb/Kconfig"
-rsource "./zepboot/Kconfig"
 rsource "./zb8/Kconfig"
