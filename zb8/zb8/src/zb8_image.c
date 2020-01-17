@@ -68,7 +68,7 @@ static int img_check_dep(struct zb_img_dep *dep)
 }
 
 static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
-			struct zb_slt_info *dst_slt_info)
+			struct zb_slt_info *dst_slt_info, bool getkey)
 {
 	int rc;
 	u32_t off;
@@ -176,11 +176,15 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	       (entry.type != TLVE_IMAGE_EPUBKEY) &&
 	       (entry.length != TLVE_IMAGE_EPUBKEY_BYTES));
 	if (!entry.type) {
+		/* No encryption key -> no encryption used */
 		info->enc_start = info->end;
 	} else {
-		if (zb_get_encr_key(info->enc_key, info->enc_nonce, entry.value,
-				    AES_KEY_SIZE)) {
-			return -EFAULT;
+		if ((!info->key_ok) && getkey) {
+			if (zb_get_encr_key(info->enc_key, info->enc_nonce,
+					    entry.value, AES_KEY_SIZE)) {
+				return -EFAULT;
+			}
+			info->key_ok = true;
 		}
 		info->enc_start = info->start;
 	}
@@ -221,7 +225,8 @@ int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	info->is_bootloader = false;
 	info->confirmed = false;
 
-	return img_get_info(info, slt_info, dst_slt_info);
+	return img_get_info(info, slt_info, dst_slt_info, false);
+
 }
 
 int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info)
@@ -232,7 +237,7 @@ int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info)
 	info->is_bootloader = false;
 	info->confirmed = false;
 
-	return img_get_info(info, slt_info, slt_info);
+	return img_get_info(info, slt_info, slt_info, true);
 }
 
 bool zb_img_info_valid(struct zb_img_info *info)

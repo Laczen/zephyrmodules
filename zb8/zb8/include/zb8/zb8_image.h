@@ -43,6 +43,7 @@ struct zb_img_info {
     	bool hdr_ok;
     	bool img_ok;
     	bool dep_ok;
+	bool key_ok;
 	bool is_bootloader;
     	bool confirmed;
 };

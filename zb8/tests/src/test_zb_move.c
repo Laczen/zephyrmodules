@@ -34,9 +34,6 @@ void move_test(uint8_t sm_idx, const unsigned char *image)
 	err = zb_slt_open(&slt_info, sm_idx, UPGRADE);
 	zassert_true(err == 0,  "Unable to get slotarea info: [err %d]", err);
 
-	err = zb_erase(&slt_info, 0, slt_info.size);
-	zassert_true(err == 0,  "Unable to erase image 0 area: [err %d]", err);
-
 	err = zb_write(&slt_info, 0, image, HDR_SIZE + IMG_SIZE);
 	zassert_true(err == 0,  "Unable to write the image: [err %d]", err);
 
@@ -50,9 +47,9 @@ void move_test(uint8_t sm_idx, const unsigned char *image)
 
 	err = zb_slt_open(&slt_info, sm_idx, RUN);
 	zassert_true(err == 0,  "Unable to get slotarea info: [err %d]", err);
-	err = zb_read(&slt_info, 0, imgheader, HDR_SIZE);
+	err = zb_read(&slt_info, 0, imgheader, HDR_SIZE - HDR_SKIP);
 	zassert_true(err == 0, "Unable to read moved header");
-	err = memcmp(&imgheader[HDR_SKIP], &image[HDR_SKIP], HDR_SIZE-HDR_SKIP);
+	err = memcmp(&imgheader, image, HDR_SIZE - HDR_SKIP);
 	zassert_true(err == 0, "Difference detected in moved header");
 
 	err = zb_read(&slt_info, HDR_SIZE, img, IMG_SIZE);
