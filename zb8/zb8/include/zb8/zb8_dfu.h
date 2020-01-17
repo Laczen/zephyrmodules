@@ -39,7 +39,7 @@ int zb_dfu_receive(u32_t offset, const u8_t *data, size_t len);
  *
  * @retval 0 on success, negative error code on fail
  */
-void zb_dfu_receive_flush(u8_t *sm_idx);
+void zb_dfu_receive_flush(void);
 
 /** @brief zb_dfu_confirm.
  *

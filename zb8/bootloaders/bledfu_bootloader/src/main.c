@@ -70,14 +70,8 @@ static void bt_ready(int err)
 
 static void reset_to_app(void)
 {
-	u8_t sm_idx;
-
-	LOG_INF("Receive finished, starting swap");
-	zb_dfu_receive_flush(&sm_idx);
-	/* start the image swap */
-	(void)zb_img_swap(sm_idx);
-	LOG_INF("Finished swap");
-	zb_dfu_restart();
+	zb_dfu_receive_flush();
+	LOG_INF("Receive finished");
 }
 
 struct nrf_dfu_cb dfu_callbacks = {

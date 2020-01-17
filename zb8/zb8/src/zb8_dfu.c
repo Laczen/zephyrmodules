@@ -26,7 +26,6 @@ static struct flash_img_ctx {
 
 int init_flash_img_ctx(struct flash_img_ctx *ctx)
 {
-	LOG_INF("Init called");
 	ctx->buf_offset = 0;
 	ctx->wr_offset = 0;
 	memset(&ctx->buf, 0xff, CONFIG_ZB_EIGHT_DFU_BLOCK_BUF_SIZE);
@@ -36,13 +35,13 @@ int init_flash_img_ctx(struct flash_img_ctx *ctx)
 int flush_flash_img_ctx(struct flash_img_ctx *ctx)
 {
 	int rc = 0;
-	uint8_t cnt = slotmap_cnt;
+	uint8_t cnt;
 	uint32_t sectorsize;
 	struct zb_fsl_hdr hdr;
 	struct zb_slt_info upgrade, swpstat;
 
 	if (!ctx->wr_offset) {
-		bool found = false;
+		bool slt_found = false;
 		/* received the first buffer, check magic and find out where to
 		 * put the image and if the size fits the slot.
 		 */
@@ -54,19 +53,20 @@ int flush_flash_img_ctx(struct flash_img_ctx *ctx)
 		if (hdr.magic != FSL_MAGIC) {
 			return -EFAULT;
 		}
-
-		while (((--cnt) != 0) && !found) {
+		cnt = zb_slt_area_cnt();
+		while ((cnt--) > 0) {
 			rc = zb_slt_open(&upgrade, cnt, UPGRADE);
 			if (rc) {
 				continue;
 			}
-			if ((hdr.upload_offset == upgrade.offset) &&
-			    (hdr.size <= upgrade.size)) {
-				found = true;
+			if (hdr.upload_offset == upgrade.offset) {
+				slt_found = true;
+				break;
 			}
 		}
 
-		if (!found) {
+		if (!slt_found) {
+			LOG_INF("No valid slot found");
 			return -EFAULT;
 		}
 		ctx->sm_idx = cnt;
@@ -94,7 +94,6 @@ int flush_flash_img_ctx(struct flash_img_ctx *ctx)
 	 		return rc;
 	 	}
 	}
-	LOG_INF("Flash Write at %x len %d", ctx->wr_offset, ctx->buf_offset);
 	rc = zb_write(&upgrade, ctx->wr_offset, ctx->buf,
 		      CONFIG_ZB_EIGHT_DFU_BLOCK_BUF_SIZE);
 	if (rc) {
@@ -124,7 +123,9 @@ int zb_dfu_receive(u32_t offset, const u8_t *data, size_t len)
 		data += plen;
 		len -= plen;
 		ctx.buf_offset += plen;
-		flush_flash_img_ctx(&ctx);
+		if (flush_flash_img_ctx(&ctx)) {
+			return -EFAULT;
+		}
 	}
 
 	if (len) {
@@ -134,12 +135,11 @@ int zb_dfu_receive(u32_t offset, const u8_t *data, size_t len)
 	return 0;
 }
 
-void zb_dfu_receive_flush(u8_t *sm_idx)
+void zb_dfu_receive_flush(void)
 {
 	if (ctx.buf_offset) {
 		flush_flash_img_ctx(&ctx);
 	}
-	*sm_idx = ctx.sm_idx;
 }
 
 int zb_dfu_confirm(u8_t sm_idx)
