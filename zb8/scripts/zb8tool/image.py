@@ -207,7 +207,7 @@ class Image():
             'BBH'   # Image dep max
             ) #}
         dep = struct.pack(fmt,
-            self.dest_address,
+            self.dest_address + 0x14,
             0,0,0,
             self.version.major or 0,
             self.version.minor or 0,

@@ -25,20 +25,23 @@ static int img_check_dep(struct zb_img_dep *dep)
 {
 	int rc;
 	u8_t cnt;
-	struct zb_fsl_hdr hdr;
+	struct zb_fsl_ver ver;
 	struct zb_slt_info slt;
 	struct device *fl_dev = NULL;
 
 	LOG_INF("Dependency offset %x", dep->offset);
 
-	if (dep->offset == DT_FLASH_AREA_BOOT_OFFSET) {
+	if (dep->offset == DT_FLASH_AREA_BOOT_OFFSET +
+			   offsetof(struct zb_fsl_hdr, version)) {
 		fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
 	} else {
 		cnt = zb_slt_area_cnt();
 		while (cnt>0) {
 			(void)zb_slt_open(&slt, --cnt, RUN);
-			if (slt.offset == dep->offset) {
+			if (dep->offset ==
+			    slt.offset + offsetof(struct zb_fsl_hdr, version)) {
 				fl_dev = slt.fl_dev;
+				break;
 			}
 		}
 	}
@@ -48,20 +51,20 @@ static int img_check_dep(struct zb_img_dep *dep)
 		return -EFAULT;
 	}
 
-	rc = flash_read(fl_dev, dep->offset, &hdr, sizeof(struct zb_fsl_hdr));
+	rc = flash_read(fl_dev, dep->offset, &ver, sizeof(struct zb_fsl_ver));
 	if (rc) {
 		return rc;
 	}
 
-	if (hdr.magic != FSL_MAGIC) {
-		hdr.version.minor = 0x00;
-		hdr.version.major = 0x00;
+	if ((ver.major == 0xff) && (ver.minor == 0xff)) {
+		ver.minor = 0x00;
+		ver.major = 0x00;
 	}
 
-	if ((dep->ver_min.major <= hdr.version.major) &&
-	    (hdr.version.major <= dep->ver_max.major) &&
-	    (dep->ver_min.minor <= hdr.version.minor) &&
-	    (hdr.version.minor <= dep->ver_max.minor)) {
+	if ((dep->ver_min.major <= ver.major) &&
+	    (ver.major <= dep->ver_max.major) &&
+	    (dep->ver_min.minor <= ver.minor) &&
+	    (ver.minor <= dep->ver_max.minor)) {
 		return 0;
 	}
 	return -EFAULT;
