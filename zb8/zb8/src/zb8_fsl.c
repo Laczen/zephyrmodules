@@ -76,6 +76,10 @@ void zb_fsl_jump_boot(void)
 	fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
 	offset = DT_FLASH_AREA_BOOT_OFFSET;
 
+	if (!fl_dev) {
+		return;
+	}
+
 	(void)flash_read(fl_dev, offset, &hdr, sizeof(struct zb_fsl_hdr));
 	offset += hdr.hdr_info.size;
 
@@ -91,6 +95,10 @@ void zb_fsl_jump_run(void)
 
 	fl_dev = device_get_binding(DT_FLASH_AREA_RUN_0_DEV);
 	offset = DT_FLASH_AREA_RUN_0_OFFSET;
+
+	if (!fl_dev) {
+		return;
+	}
 
 	(void)flash_read(fl_dev, offset, &hdr, sizeof(struct zb_fsl_hdr));
 	offset += hdr.hdr_info.size;

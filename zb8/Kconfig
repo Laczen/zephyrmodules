@@ -7,6 +7,7 @@
 
 config ZB_EIGHT
 	bool "Small secure bootloader"
+	select FLASH
 	help
 	  Enable support of zb-eight.
 
@@ -45,5 +46,14 @@ config ZB_EIGHT_IS_FSL
 	default n
 	help
 	  Enables the zb8 library to be used for a First Stage Loader.
+
+config ZB_EIGHT_SW_VECTOR_RELAY
+	bool "Enable SW VECTOR RELAY"
+	default y
+	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
+	select SW_VECTOR_RELAY
+	help
+	  Enable software emulation of VTOR in case the mcu is missing a proper
+	  VTOR.
 
 endif # ZB_EIGHT
