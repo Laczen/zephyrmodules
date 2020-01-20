@@ -191,7 +191,7 @@ int zb_img_cmd_proc(uint8_t sm_idx) {
 		case CMD2_FINALISE:
 			LOG_INF("Prepare image for booting");
 			(void)zb_get_img_info(&run_info, &run_slt);
-			if ((run_info.confirmed) || (in_place)) {
+			if (run_info.confirmed) {
 				zb_img_confirm(&run_slt);
 			}
 			cmd.cmd2 = CMD2_SWP_END;

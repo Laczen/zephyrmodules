@@ -15,6 +15,4 @@ LOG_MODULE_REGISTER(main);
 void main(void)
 {
 	LOG_INF("Welcome to the test application");
-	LOG_INF("Jumping back to the bootloader...");
-	zb_fsl_jump_boot();
 }

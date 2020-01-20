@@ -7,11 +7,12 @@
  */
 
 #include <zephyr.h>
-
+#include <drivers/gpio.h>
 #include <bluetooth/gatt.h>
 
 #include <zb8/zb8_move.h>
 #include <zb8/zb8_dfu.h>
+#include <zb8/zb8_fsl.h>
 #include "nrf_dfu.h"
 
 
@@ -84,9 +85,28 @@ static void dfu_init(void)
 	nrf_dfu_init(&dfu_callbacks, 0U, 0U);
 }
 
+/* change this to use another GPIO port */
+#define PORT	DT_ALIAS_SW0_GPIOS_CONTROLLER
+
+/* change this to use another GPIO pin */
+#define PIN     DT_ALIAS_SW0_GPIOS_PIN
+
+/* change this to enable pull-up/pull-down */
+#define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
+
 void main(void)
 {
 	int err, cnt;
+	struct device *gpiob;
+	u32_t val;
+
+	gpiob = device_get_binding(PORT);
+	if (!gpiob) {
+		LOG_INF("error\n");
+		return;
+	}
+	gpio_pin_configure(gpiob, PIN, GPIO_DIR_IN |  PULL_UP);
+	gpio_pin_read(gpiob, PIN, &val);
 
 	LOG_INF("Welcome to ZB-8 bootloader with bledfu");
 
@@ -97,7 +117,14 @@ void main(void)
 		(void)zb_img_swap(cnt);
 	}
 
-	/* TODO Add support for RAM images */
+	if (!val) {
+		LOG_INF("Remaining in the bootloader");
+	} else {
+		LOG_INF("Starting the image");
+
+		/* TODO Add support for RAM images */
+		zb_fsl_jump_run();
+	}
 
 	err = bt_enable(bt_ready);
 	if (err) {
