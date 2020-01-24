@@ -96,7 +96,7 @@ static void dfu_init(void)
 
 void main(void)
 {
-	int err, cnt;
+	int err, cnt, rc = 0;
 	struct device *gpiob;
 	u32_t val;
 
@@ -114,10 +114,10 @@ void main(void)
 
 	/* Start or continue swap */
 	while ((cnt--) > 0) {
-		(void)zb_img_swap(cnt);
+		rc = rc | zb_img_swap(cnt);
 	}
 
-	if (!val) {
+	if (!val || rc) {
 		LOG_INF("Remaining in the bootloader");
 	} else {
 		LOG_INF("Starting the image");
