@@ -95,6 +95,15 @@ int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info);
 
 /**
+ * @brief zb_res_img_info
+ *
+ * Reset boolean values in img_info.
+ *
+ * @param img_info pointer.
+ */
+void zb_res_img_info(struct zb_img_info *info);
+
+/**
  * @brief zb_img_info_valid
  *
  * checks if image info is valid

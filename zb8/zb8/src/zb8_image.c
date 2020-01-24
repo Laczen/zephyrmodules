@@ -23,37 +23,51 @@ LOG_MODULE_REGISTER(zb8_image);
 
 static int img_check_dep(struct zb_img_dep *dep)
 {
-	int rc;
 	u8_t cnt;
 	struct zb_fsl_ver ver;
-	struct zb_slt_info slt;
-	struct device *fl_dev = NULL;
+	struct zb_slt_info run_slt, move_slt;
+	bool dep_loc_found = false;
 
 	LOG_INF("Dependency offset %x", dep->offset);
 
-	if (dep->offset == DT_FLASH_AREA_BOOT_OFFSET +
-			   offsetof(struct zb_fsl_hdr, version)) {
-		fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
-	} else {
-		cnt = zb_slt_area_cnt();
-		while (cnt>0) {
-			(void)zb_slt_open(&slt, --cnt, RUN);
-			if (dep->offset ==
-			    slt.offset + offsetof(struct zb_fsl_hdr, version)) {
-				fl_dev = slt.fl_dev;
-				break;
-			}
+	cnt = zb_slt_area_cnt();
+	while (cnt > 0) {
+		cnt--;
+		(void)zb_slt_open(&run_slt, cnt, RUN);
+		(void)zb_slt_open(&move_slt, cnt, MOVE);
+		run_slt.offset += offsetof(struct zb_fsl_hdr, version);
+		move_slt.offset += offsetof(struct zb_fsl_hdr, version);
+		if (dep->offset == run_slt.offset) {
+			dep_loc_found = true;
+			break;
 		}
 	}
 
-	if (!fl_dev) {
+	if (!dep_loc_found) {
+		run_slt.offset = DT_FLASH_AREA_BOOT_OFFSET;
+		run_slt.offset += offsetof(struct zb_fsl_hdr, version);
+		run_slt.fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
+		move_slt = run_slt;
+		if (dep->offset == run_slt.offset) {
+			dep_loc_found = true;
+		}
+	}
+
+	if (!dep_loc_found) {
 		LOG_INF("Bad dependency");
 		return -EFAULT;
 	}
 
-	rc = flash_read(fl_dev, dep->offset, &ver, sizeof(struct zb_fsl_ver));
-	if (rc) {
-		return rc;
+	if (flash_read(run_slt.fl_dev, run_slt.offset, &ver,
+		       sizeof(struct zb_fsl_ver))) {
+		return -EFAULT;
+	}
+
+	if ((ver.major == 0xff) && (ver.minor == 0xff)) {
+		if (flash_read(move_slt.fl_dev, move_slt.offset, &ver,
+			       sizeof(struct zb_fsl_ver))) {
+			return -EFAULT;
+		}
 	}
 
 	if ((ver.major == 0xff) && (ver.minor == 0xff)) {
@@ -71,7 +85,7 @@ static int img_check_dep(struct zb_img_dep *dep)
 }
 
 static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
-			struct zb_slt_info *dst_slt_info, bool getkey)
+			struct zb_slt_info *dst_slt_info)
 {
 	int rc;
 	u32_t off;
@@ -182,7 +196,7 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 		/* No encryption key -> no encryption used */
 		info->enc_start = info->end;
 	} else {
-		if ((!info->key_ok) && getkey) {
+		if (!info->key_ok) {
 			if (zb_get_encr_key(info->enc_key, info->enc_nonce,
 					    entry.value, AES_KEY_SIZE)) {
 				return -EFAULT;
@@ -219,28 +233,25 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	return 0;
 }
 
-int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
-		    struct zb_slt_info *dst_slt_info)
+void zb_res_img_info(struct zb_img_info *info)
 {
 	info->hdr_ok = false;
 	info->img_ok = false;
 	info->dep_ok = false;
+	info->key_ok = false;
 	info->is_bootloader = false;
 	info->confirmed = false;
+}
 
-	return img_get_info(info, slt_info, dst_slt_info, false);
-
+int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
+		    struct zb_slt_info *dst_slt_info)
+{
+	return img_get_info(info, slt_info, dst_slt_info);
 }
 
 int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info)
 {
-	info->hdr_ok = true;
-	info->img_ok = true;
-	info->dep_ok = true;
-	info->is_bootloader = false;
-	info->confirmed = false;
-
-	return img_get_info(info, slt_info, slt_info, true);
+	return img_get_info(info, slt_info, slt_info);
 }
 
 bool zb_img_info_valid(struct zb_img_info *info)
