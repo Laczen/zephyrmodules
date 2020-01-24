@@ -55,8 +55,6 @@ int zb_img_swap(uint8_t sm_idx) {
 	move_info.img_ok = true;
 	move_info.dep_ok = true;
 
-	LOG_INF("Doing %s upgrade", in_place ? "INPLACE" : "CLASSIC");
-
 	start_swap = false;
 
 	if (zb_cmd_read(&swpstat_slt, &cmd) == -ENOENT) {
@@ -68,6 +66,8 @@ int zb_img_swap(uint8_t sm_idx) {
 		start_swap = true;
 	} else {
 		/* swpstat contains info, determine what to do */
+		run_info.hdr_ok = true;
+		run_info.key_ok = true;
 		(void)zb_get_img_info(&run_info, &run_slt);
 		if ((cmd.cmd2 == CMD2_SWP_END) && (in_place)) {
 			if (run_info.is_bootloader) {
@@ -89,7 +89,11 @@ int zb_img_swap(uint8_t sm_idx) {
 		if (cmd.cmd2 != CMD2_SWP_END) {
 			LOG_INF("Continuing swap...");
 		}
+		run_info.hdr_ok = false;
+		run_info.key_ok = false;
 	}
+
+	LOG_INF("Doing %s upgrade", in_place ? "INPLACE" : "CLASSIC");
 
 	if (start_swap) {
 		if (cmd.cmd2 == CMD2_SWP_END) {
