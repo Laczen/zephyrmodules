@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sfcb.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <ztest.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);

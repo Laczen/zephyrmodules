@@ -14,7 +14,7 @@ extern "C" {
 #include <sys/types.h>
 #include <kernel.h>
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <errno.h>
 #include <crc.h>
 
