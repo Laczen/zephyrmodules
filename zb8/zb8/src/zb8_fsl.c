@@ -5,7 +5,7 @@
  */
 
 #include <zb8/zb8_fsl.h>
-#include <flash.h>
+#include <drivers/flash.h>
 #include <soc.h>
 #include <sys/crc.h>
 

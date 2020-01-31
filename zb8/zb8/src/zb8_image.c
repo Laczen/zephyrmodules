@@ -12,7 +12,7 @@
 
 #include <errno.h>
 #include <device.h>
-#include <flash.h>
+#include <drivers/flash.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(zb8_image);

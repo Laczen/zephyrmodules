@@ -6,7 +6,7 @@
 
 #include <zb8/zb8_flash.h>
 
-#include <flash.h>
+#include <drivers/flash.h>
 #include <sys/crc.h>
 #include <errno.h>
 

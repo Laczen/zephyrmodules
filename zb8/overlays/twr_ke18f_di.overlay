@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2019 Laczen
+ *
+ * Overlay file for ZB-8 dual image setup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &scratch_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+/ {
+	chosen {
+		zephyr,code-partition = &run0_partition;
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		fsl_partition: partition@0 {
+			label = "fsl";
+			reg = <0x00000000 0x00004000>;
+		};
+		boot_partition: partition@4000 {
+			label = "boot";
+			reg = <0x00004000 0x00007000>;
+		};
+		storage_partition: partition@B000 {
+			label = "storage";
+			reg = <0x0000B000 0x00007000>;
+		};
+		swpstat0_partition: partition@12000 {
+			label = "swpstat-0";
+			reg = <0x00012000 0x00001000>;
+		};
+		run0_partition: partition@13000 {
+			label = "run-0";
+			reg = <0x00013000 0x00036000>;
+		};
+		move0_partition: partition@14000 {
+			label = "move-0";
+			reg = <0x00014000 0x00036000>;
+		};
+		upgrade0_partition: partition@4A000 {
+			label = "upgrade-0";
+			reg = <0x0004A000 0x00036000>;
+		};
+	};
+};
