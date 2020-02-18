@@ -116,7 +116,9 @@ void test_zb_ewr(void)
 
 		err = zb_slt_open(&slt_info, cnt - 1, SWPSTAT);
 		zassert_true(err == 0, "Unable to open SWPSTAT: [err %d]", err);
-		fltest(&slt_info);
+		if (slt_info.size) {
+			fltest(&slt_info);
+		}
 
 		cnt--;
 	}

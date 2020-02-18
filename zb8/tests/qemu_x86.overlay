@@ -60,9 +60,10 @@
 			label = "upgrade-1";
 			reg = <0x00021000 0x00004000>;
 		};
-		swpstat1_partition: partition@25000 {
-			label = "swpstat-1";
-			reg = <0x00025000 0x001000>;
-		};
+/*		swpstat1_partition: partition@25000 {
+#			label = "swpstat-1";
+#			reg = <0x00025000 0x001000>;
+#		};
+*/
 	};
 };

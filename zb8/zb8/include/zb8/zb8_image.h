@@ -95,6 +95,17 @@ int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info);
 
 /**
+ * @brief zb_slt_has_img_hdr
+ *
+ * Check if the slt in slt_info contains a image hdr.
+ *
+ * @param slt_info
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int zb_slt_has_img_hdr(struct zb_slt_info *slt_info);
+
+/**
  * @brief zb_res_img_info
  *
  * Reset boolean values in img_info.

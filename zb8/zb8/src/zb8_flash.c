@@ -53,6 +53,10 @@ int zb_erase(struct zb_slt_info *info, u32_t offset, size_t len)
 
 	LOG_DBG("Erasing [%zu] bytes at [%x]", len, offset);
 
+	if (!len) {
+		return 0;
+	}
+
 	if ((offset + len) > info->size) {
 		return -EINVAL;
 	}
@@ -144,6 +148,22 @@ int zb_read(struct zb_slt_info *info, u32_t offset, void *data, size_t len)
 		return 0;
 	}
 	return flash_read(info->fl_dev, (off_t)offset, data, len);
+}
+
+bool zb_empty_slot(struct zb_slt_info *info)
+{
+	u32_t buf;
+	u32_t offset = 0U;
+
+	while (offset < info->size) {
+		(void)flash_read(info->fl_dev, (off_t)(offset + info->offset),
+				 &buf, sizeof(buf));
+		if (buf != EMPTY_U32) {
+			return false;
+		}
+		offset += sizeof(buf);
+	}
+	return true;
 }
 
 /* crc8 calculation and verification in one routine:

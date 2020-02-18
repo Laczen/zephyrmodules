@@ -85,7 +85,7 @@ static int img_check_dep(struct zb_img_dep *dep)
 }
 
 static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
-			struct zb_slt_info *dst_slt_info)
+			struct zb_slt_info *dst_slt_info, bool full_check)
 {
 	int rc;
 	u32_t off;
@@ -125,6 +125,10 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	/* Check if the image is a bootloader */
 	if ((hdr.run_offset - hdr.hdr_info.size) == DT_FLASH_AREA_BOOT_OFFSET) {
 		info->is_bootloader = true;
+	}
+
+	if (!full_check) {
+		return 0;
 	}
 
 	tsize -= sizeof(sign);
@@ -246,12 +250,18 @@ void zb_res_img_info(struct zb_img_info *info)
 int zb_val_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 		    struct zb_slt_info *dst_slt_info)
 {
-	return img_get_info(info, slt_info, dst_slt_info);
+	return img_get_info(info, slt_info, dst_slt_info, true);
 }
 
 int zb_get_img_info(struct zb_img_info *info, struct zb_slt_info *slt_info)
 {
-	return img_get_info(info, slt_info, slt_info);
+	return img_get_info(info, slt_info, slt_info, true);
+}
+
+int zb_slt_has_img_hdr(struct zb_slt_info *slt_info)
+{
+	struct zb_img_info info;
+	return img_get_info(&info, slt_info, slt_info, false);
 }
 
 bool zb_img_info_valid(struct zb_img_info *info)

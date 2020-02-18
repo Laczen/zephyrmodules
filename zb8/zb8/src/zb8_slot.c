@@ -27,9 +27,18 @@ const struct zb_slt_area slotmap[] = {
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_0_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_0_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_0_DEV,
+#ifdef DT_FLASH_AREA_SWPSTAT_0_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_0_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_0_SIZE,
 		.swpstat_devname = DT_FLASH_AREA_SWPSTAT_0_DEV,
+#else
+#if DT_FLASH_AREA_MOVE_0_OFFSET != DT_FLASH_AREA_UPGRADE_0_OFFSET
+#error("Slot 0 configuration error")
+#endif
+		.swpstat_offset = DT_FLASH_AREA_RUN_0_OFFSET,
+		.swpstat_size = 0,
+		.swpstat_devname = DT_FLASH_AREA_RUN_0_DEV,
+#endif
 	},
 #ifdef DT_FLASH_AREA_RUN_1_OFFSET
 	{
@@ -42,9 +51,18 @@ const struct zb_slt_area slotmap[] = {
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_1_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_1_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_1_DEV,
+#ifdef DT_FLASH_AREA_SWPSTAT_1_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_1_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_1_SIZE,
 		.swpstat_devname = DT_FLASH_AREA_SWPSTAT_1_DEV,
+#else
+#if DT_FLASH_AREA_MOVE_1_OFFSET != DT_FLASH_AREA_UPGRADE_1_OFFSET
+#error("Slot 1 configuration error")
+#endif
+		.swpstat_offset = DT_FLASH_AREA_RUN_1_OFFSET,
+		.swpstat_size = 0,
+		.swpstat_devname = DT_FLASH_AREA_RUN_1_DEV,
+#endif
 	},
 #endif
 #ifdef DT_FLASH_AREA_RUN_2_OFFSET
@@ -58,9 +76,18 @@ const struct zb_slt_area slotmap[] = {
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_2_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_2_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_2_DEV,
+#ifdef DT_FLASH_AREA_SWPSTAT_2_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_2_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_2_SIZE,
 		.swpstat_devname = DT_FLASH_AREA_SWPSTAT_2_DEV,
+#else
+#if DT_FLASH_AREA_MOVE_2_OFFSET != DT_FLASH_AREA_UPGRADE_2_OFFSET
+#error("Slot 2 configuration error")
+#endif
+		.swpstat_offset = DT_FLASH_AREA_RUN_2_OFFSET,
+		.swpstat_size = 0,
+		.swpstat_devname = DT_FLASH_AREA_RUN_2_DEV,
+#endif
 	},
 #endif
 #ifdef DT_FLASH_AREA_RUN_3_OFFSET
@@ -74,9 +101,18 @@ const struct zb_slt_area slotmap[] = {
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_3_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_3_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_3_DEV,
+#ifdef DT_FLASH_AREA_SWPSTAT_3_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_3_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_3_SIZE,
 		.swpstat_devname = DT_FLASH_AREA_SWPSTAT_3_DEV,
+#else
+#if DT_FLASH_AREA_MOVE_3_OFFSET != DT_FLASH_AREA_UPGRADE_3_OFFSET
+#error("Slot 3 configuration error")
+#endif
+		.swpstat_offset = DT_FLASH_AREA_RUN_3_OFFSET,
+		.swpstat_size = 0,
+		.swpstat_devname = DT_FLASH_AREA_RUN_3_DEV,
+#endif
 	},
 #endif
 };

@@ -23,7 +23,7 @@ int zb_img_swap(uint8_t sm_idx) {
 	zb_move_cmd mcmd;
 	struct zb_slt_info run_slt, move_slt, upgr_slt, swpstat_slt;
 	struct zb_img_info run_info, move_info, upgr_info;
-	bool in_place, upg2run_done, mov2upg_done, start_swap;
+	bool in_place, save_stat, upg2run_done, mov2upg_done, continue_swap;
 	u32_t cmd_off, sectorsize;
 	u32_t len;
 
@@ -40,8 +40,6 @@ int zb_img_swap(uint8_t sm_idx) {
 		return rc;
 	}
 
-	in_place = zb_inplace_slt(sm_idx);
-
 	/* reset the image info ..._ok = false */
 	zb_res_img_info(&run_info);
 	zb_res_img_info(&move_info);
@@ -55,47 +53,72 @@ int zb_img_swap(uint8_t sm_idx) {
 	move_info.img_ok = true;
 	move_info.dep_ok = true;
 
-	start_swap = false;
+	continue_swap = false;
+	save_stat = (!swpstat_slt.size) ? false : true;
+	in_place = zb_inplace_slt(sm_idx);
 
-	if (zb_cmd_read(&swpstat_slt, &cmd) == -ENOENT) {
-		/* Empty swpstat: do upgrade if image is valid */
+	run_info.hdr_ok = true;
+	run_info.key_ok = true;
+	if (!save_stat) {
+		/* Swap status is not saved to flash */
+		if (!in_place) {
+			LOG_ERR("BAD Configuration");
+			return -EINVAL;
+		}
+		if (zb_slt_has_img_hdr(&upgr_slt)) {
+			/* upgrade slot contains no image */
+			(void)zb_get_img_info(&run_info, &run_slt);
+			if (run_info.is_bootloader) {
+				LOG_INF("Erasing BL from run slot...");
+				(void)zb_erase(&run_slt, 0, run_slt.size);
+				return -EINVAL;
+			}
+			if (!run_info.confirmed) {
+				LOG_INF("Unconfirmed image in run slot...");
+				return -EINVAL;
+			}
+			return 0;
+		}
+		/* upgrade slot contains image */
+		cmd.cmd1 = CMD_EMPTY;
+		cmd.cmd2 = CMD_EMPTY;
+		cmd.cmd3 = CMD_EMPTY;
+	} else {
+		/* status is saved to flash */
+		if (zb_cmd_read(&swpstat_slt, &cmd) != -ENOENT) {
+			(void)zb_get_img_info(&run_info, &run_slt);
+			if (cmd.cmd2 == CMD2_SWP_END) {
+				if ((!run_info.is_bootloader) &&
+				    run_info.confirmed) {
+					LOG_INF("Nothing to do...");
+					return 0;
+				}
+				if ((in_place) && (run_info.is_bootloader)) {
+					LOG_INF("Erasing BL from run slot...");
+					(void)zb_erase(&run_slt, 0,
+						       run_slt.size);
+					/* Avoid booting this image */
+					return -EINVAL;
+				}
+				LOG_INF("Restoring previous image...");
+			} else {
+				continue_swap = true;
+				LOG_INF("Continuing swap...");
+			}
+		} else {
+			cmd.cmd1 = CMD_EMPTY;
+			cmd.cmd2 = CMD_EMPTY;
+			cmd.cmd3 = CMD_EMPTY;
+		}
+	}
+	run_info.hdr_ok = false;
+	run_info.key_ok = false;
+
+	if (!continue_swap) {
 		if (zb_val_img_info(&upgr_info, &upgr_slt, &run_slt)) {
 			LOG_ERR("BAD IMAGE in upgrade slot");
 			return -EINVAL;
 		}
-		start_swap = true;
-	} else {
-		/* swpstat contains info, determine what to do */
-		run_info.hdr_ok = true;
-		run_info.key_ok = true;
-		(void)zb_get_img_info(&run_info, &run_slt);
-		if ((cmd.cmd2 == CMD2_SWP_END) && (in_place)) {
-			if (run_info.is_bootloader) {
-				LOG_INF("Erasing BL from run slot...");
-				(void)zb_erase(&run_slt, 0, run_slt.size);
-			}
-			LOG_INF("Nothing to do...");
-			return 0;
-		}
-		if ((cmd.cmd2 == CMD2_SWP_END) && (!in_place)) {
-			if ((run_info.is_bootloader) || (!run_info.confirmed)) {
-				LOG_INF("Restoring...");
-				start_swap = true;
-			} else {
-				LOG_INF("Nothing to do...");
-				return 0;
-			}
-		}
-		if (cmd.cmd2 != CMD2_SWP_END) {
-			LOG_INF("Continuing swap...");
-		}
-		run_info.hdr_ok = false;
-		run_info.key_ok = false;
-	}
-
-	LOG_INF("Doing %s upgrade", in_place ? "INPLACE" : "CLASSIC");
-
-	if (start_swap) {
 		if (cmd.cmd2 == CMD2_SWP_END) {
 			(void)zb_erase(&swpstat_slt, 0, swpstat_slt.size);
 		}
@@ -103,6 +126,8 @@ int zb_img_swap(uint8_t sm_idx) {
 		cmd.cmd2 = CMD_EMPTY;
 		cmd.cmd3 = CMD_EMPTY;
 	}
+
+	LOG_INF("Doing %s upgrade", in_place ? "INPLACE" : "CLASSIC");
 
 	upg2run_done = false;
 	mov2upg_done = in_place;
@@ -256,13 +281,15 @@ int zb_img_swap(uint8_t sm_idx) {
 		case CMD2_FINALISE:
 			LOG_INF("Prepare image for booting");
 			(void)zb_get_img_info(&run_info, &run_slt);
-			if (run_info.confirmed) {
+			if ((run_info.confirmed) || (in_place)) {
 				(void)zb_img_confirm(&run_slt);
 			}
 			cmd.cmd2 = CMD2_SWP_END;
 			break;
 		}
-		(void)zb_cmd_write(&swpstat_slt, &cmd);
+		if (save_stat) {
+			(void)zb_cmd_write(&swpstat_slt, &cmd);
+		}
 	}
 	LOG_INF("Finished swap");
 	if (dp_err) {

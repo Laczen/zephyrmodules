@@ -33,6 +33,7 @@ int zb_erase(struct zb_slt_info *info, u32_t offset, size_t len);
 int zb_write(struct zb_slt_info *info, u32_t offset, const void *data,
              size_t len);
 int zb_read(struct zb_slt_info *info, u32_t offset, void *data, size_t len);
+bool zb_empty_slot(struct zb_slt_info *info);
 
 /**
  * @}
@@ -45,10 +46,10 @@ int zb_read(struct zb_slt_info *info, u32_t offset, void *data, size_t len);
 
 struct zb_cmd {
 	/*@{*/
-	u8_t cmd1;	    /**< command */
+	u8_t cmd1;	/**< command */
         u8_t cmd2;      /**< extended command */
-	u8_t cmd3;    /**< sector to process */
-	u8_t crc8;	    /**< crc8 calculated over cmd and sector */
+	u8_t cmd3;	/**< sector to process */
+	u8_t crc8;	/**< crc8 calculated over cmd and sector */
 	/*@}*/
 } __packed;
 
