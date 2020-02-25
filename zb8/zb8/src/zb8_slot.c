@@ -21,12 +21,18 @@ const struct zb_slt_area slotmap[] = {
     		.run_offset = DT_FLASH_AREA_RUN_0_OFFSET,
 		.run_size = DT_FLASH_AREA_RUN_0_SIZE,
 		.run_devname = DT_FLASH_AREA_RUN_0_DEV,
-		.move_offset = DT_FLASH_AREA_MOVE_0_OFFSET,
-		.move_size = DT_FLASH_AREA_MOVE_0_SIZE,
-		.move_devname = DT_FLASH_AREA_MOVE_0_DEV,
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_0_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_0_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_0_DEV,
+#ifdef DT_FLASH_AREA_MOVE_0_OFFSET
+		.move_offset = DT_FLASH_AREA_MOVE_0_OFFSET,
+		.move_size = DT_FLASH_AREA_MOVE_0_SIZE,
+		.move_devname = DT_FLASH_AREA_MOVE_0_DEV,
+#else
+		.move_offset = DT_FLASH_AREA_UPGRADE_0_OFFSET,
+		.move_size = DT_FLASH_AREA_UPGRADE_0_SIZE,
+		.move_devname = DT_FLASH_AREA_UPGRADE_0_DEV,
+#endif /* DT_FLASH_AREA_MOVE_0_OFFSET */
 #ifdef DT_FLASH_AREA_SWPSTAT_0_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_0_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_0_SIZE,
@@ -38,19 +44,25 @@ const struct zb_slt_area slotmap[] = {
 		.swpstat_offset = DT_FLASH_AREA_RUN_0_OFFSET,
 		.swpstat_size = 0,
 		.swpstat_devname = DT_FLASH_AREA_RUN_0_DEV,
-#endif
+#endif /* DT_FLASH_AREA_SWPSTAT_0_OFFSET */
 	},
 #ifdef DT_FLASH_AREA_RUN_1_OFFSET
 	{
     		.run_offset = DT_FLASH_AREA_RUN_1_OFFSET,
 		.run_size = DT_FLASH_AREA_RUN_1_SIZE,
 		.run_devname = DT_FLASH_AREA_RUN_1_DEV,
-		.move_offset = DT_FLASH_AREA_MOVE_1_OFFSET,
-		.move_size = DT_FLASH_AREA_MOVE_1_SIZE,
-		.move_devname = DT_FLASH_AREA_MOVE_1_DEV,
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_1_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_1_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_1_DEV,
+#ifdef DT_FLASH_AREA_MOVE_1_OFFSET
+		.move_offset = DT_FLASH_AREA_MOVE_1_OFFSET,
+		.move_size = DT_FLASH_AREA_MOVE_1_SIZE,
+		.move_devname = DT_FLASH_AREA_MOVE_1_DEV,
+#else
+		.move_offset = DT_FLASH_AREA_UPGRADE_1_OFFSET,
+		.move_size = DT_FLASH_AREA_UPGRADE_1_SIZE,
+		.move_devname = DT_FLASH_AREA_UPGRADE_1_DEV,
+#endif /* DT_FLASH_AREA_MOVE_1_OFFSET */
 #ifdef DT_FLASH_AREA_SWPSTAT_1_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_1_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_1_SIZE,
@@ -70,12 +82,18 @@ const struct zb_slt_area slotmap[] = {
     		.run_offset = DT_FLASH_AREA_RUN_2_OFFSET,
 		.run_size = DT_FLASH_AREA_RUN_2_SIZE,
 		.run_devname = DT_FLASH_AREA_RUN_2_DEV,
-		.move_offset = DT_FLASH_AREA_MOVE_2_OFFSET,
-		.move_size = DT_FLASH_AREA_MOVE_2_SIZE,
-		.move_devname = DT_FLASH_AREA_MOVE_2_DEV,
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_2_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_2_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_2_DEV,
+#ifdef DT_FLASH_AREA_MOVE_2_OFFSET
+		.move_offset = DT_FLASH_AREA_MOVE_2_OFFSET,
+		.move_size = DT_FLASH_AREA_MOVE_2_SIZE,
+		.move_devname = DT_FLASH_AREA_MOVE_2_DEV,
+#else
+		.move_offset = DT_FLASH_AREA_UPGRADE_2_OFFSET,
+		.move_size = DT_FLASH_AREA_UPGRADE_2_SIZE,
+		.move_devname = DT_FLASH_AREA_UPGRADE_2_DEV,
+#endif /* DT_FLASH_AREA_MOVE_2_OFFSET */
 #ifdef DT_FLASH_AREA_SWPSTAT_2_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_2_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_2_SIZE,
@@ -95,12 +113,18 @@ const struct zb_slt_area slotmap[] = {
     		.run_offset = DT_FLASH_AREA_RUN_3_OFFSET,
 		.run_size = DT_FLASH_AREA_RUN_3_SIZE,
 		.run_devname = DT_FLASH_AREA_RUN_3_DEV,
-		.move_offset = DT_FLASH_AREA_MOVE_3_OFFSET,
-		.move_size = DT_FLASH_AREA_MOVE_3_SIZE,
-		.move_devname = DT_FLASH_AREA_MOVE_3_DEV,
 		.upgrade_offset = DT_FLASH_AREA_UPGRADE_3_OFFSET,
 		.upgrade_size = DT_FLASH_AREA_UPGRADE_3_SIZE,
 		.upgrade_devname  = DT_FLASH_AREA_UPGRADE_3_DEV,
+#ifdef DT_FLASH_AREA_MOVE_3_OFFSET
+		.move_offset = DT_FLASH_AREA_MOVE_3_OFFSET,
+		.move_size = DT_FLASH_AREA_MOVE_3_SIZE,
+		.move_devname = DT_FLASH_AREA_MOVE_3_DEV,
+#else
+		.move_offset = DT_FLASH_AREA_UPGRADE_3_OFFSET,
+		.move_size = DT_FLASH_AREA_UPGRADE_3_SIZE,
+		.move_devname = DT_FLASH_AREA_UPGRADE_3_DEV,
+#endif /* DT_FLASH_AREA_MOVE_0_OFFSET */
 #ifdef DT_FLASH_AREA_SWPSTAT_3_OFFSET
 		.swpstat_offset = DT_FLASH_AREA_SWPSTAT_3_OFFSET,
 		.swpstat_size = DT_FLASH_AREA_SWPSTAT_3_SIZE,
@@ -169,10 +193,12 @@ int zb_slt_open(struct zb_slt_info *info, u8_t sm_idx, enum slot slot)
 
 u32_t zb_sectorsize_get(u8_t sm_idx)
 {
+	u32_t sector_size;
 	if (sm_idx >= slotmap_cnt) {
 		return 0;
 	}
-	return (slotmap[sm_idx].move_offset - slotmap[sm_idx].run_offset);
+	sector_size = slotmap[sm_idx].move_offset - slotmap[sm_idx].run_offset;
+	return sector_size;
 }
 
 bool zb_range_in_slt(struct zb_slt_info *info, u32_t address, size_t len)
