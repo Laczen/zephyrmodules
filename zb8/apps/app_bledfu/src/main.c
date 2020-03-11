@@ -10,8 +10,8 @@
 
 #include <bluetooth/gatt.h>
 
-#include <zepboot/zb_fsl.h>
-#include <zepboot/zb_dfu.h>
+#include <zb8/zb8_fsl.h>
+#include <zb8/zb8_dfu.h>
 #include "nrf_dfu.h"
 
 
@@ -70,24 +70,15 @@ static void bt_ready(int err)
 
 static void reset_to_app(void)
 {
-	u8_t sm_idx;
-	struct zb_fsl_ctx ctxb;
-
-	zb_dfu_receive_flush(&sm_idx);
-	LOG_INF("Receive finished, restarting to bootloader");
-	/* Restart the bootloader */
-	ctxb.addr = DT_FLASH_AREA_BOOT_OFFSET;
-	ctxb.fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
-	zb_fsl_verify(&ctxb);
-	zb_fsl_boot(&ctxb);
-
-
+	zb_dfu_receive_flush();
+	LOG_INF("Receive finished, restarting the swapper");
+	/* Call the swapper */
+	zb_fsl_jump_swpr();
 }
 
 struct nrf_dfu_cb dfu_callbacks = {
 	.receive = &zb_dfu_receive,
 	.reset_to_app = &reset_to_app,
-
 };
 
 static void dfu_init(void)
@@ -107,7 +98,7 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 	dfu_init();
-	LOG_INF("Welcome to ZEPBOOT bledfu uploader\n");
+	LOG_INF("Welcome to ZB-8 bledfu uploader\n");
 
 	while (1) {
 		k_sleep(MSEC_PER_SEC);

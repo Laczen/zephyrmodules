@@ -11,7 +11,7 @@
 #include <zephyr.h>
 
 #include <zephyr/types.h>
-#include <misc/byteorder.h>
+#include <sys/byteorder.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -357,10 +357,8 @@ static ssize_t read_version(struct bt_conn *conn,
 		version = 0x0004; /* 0.4 (bootloader mode) */
 	}
 
-	LOG_INF("read_version [%d]", version);
 	tmp = bt_gatt_attr_read(conn, attr, buf, len, offset, &version,
 				 sizeof(version));
-	LOG_INF("read_version [%d]", version);
 	return tmp;
 
 }

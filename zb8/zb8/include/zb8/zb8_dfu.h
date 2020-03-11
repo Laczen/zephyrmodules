@@ -39,7 +39,7 @@ int zb_dfu_receive(u32_t offset, const u8_t *data, size_t len);
  *
  * @retval 0 on success, negative error code on fail
  */
-void zb_dfu_receive_flush(void);
+int zb_dfu_receive_flush(void);
 
 /** @brief zb_dfu_confirm.
  *
@@ -56,12 +56,19 @@ int zb_dfu_confirm(u8_t sm_idx);
  */
 void zb_dfu_restart(void);
 
-/** @brief zb_dfu_blstart.
+/** @brief zb_dfu_ldr_start.
  *
- * restart the system by starting the bootloader
+ * restart the system by starting the loader
  *
  */
-void zb_dfu_blstart(void);
+void zb_dfu_ldr_start(void);
+
+/** @brief zb_dfu_swpr_start.
+ *
+ * restart the system by starting the loader
+ *
+ */
+void zb_dfu_swpr_start(void);
 
 #ifdef __cplusplus
 }

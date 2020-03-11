@@ -8,6 +8,7 @@
 #include <zb8/zb8_flash.h>
 #include <zb8/zb8_image.h>
 #include <zb8/zb8_fsl.h>
+#include <zb8/zb8_confirm.h>
 
 #include <errno.h>
 
@@ -40,10 +41,28 @@ int zb_img_swap(uint8_t sm_idx) {
 		return rc;
 	}
 
+	if (!zb_slt_validate(sm_idx)) {
+		/* Nothing to do, run image is valid */
+		return 0;
+	}
+
+	/* swap is needed, first determine kind of swap */
+	continue_swap = false;
+	save_stat = (!swpstat_slt.size) ? false : true;
+	if (save_stat) {
+		if (zb_cmd_read(&swpstat_slt, &cmd) != -ENOENT) {
+			if (cmd.cmd2 != CMD2_SWP_END) {
+				continue_swap = true;
+			}
+		}
+	}
+
+	in_place = zb_inplace_slt(sm_idx);
 	/* reset the image info ..._ok = false */
 	zb_res_img_info(&run_info);
 	zb_res_img_info(&move_info);
 	zb_res_img_info(&upgr_info);
+
 	/* images in run or move slot will fail image hash verification if they
 	 * use encryption, disable image hash verification, these images also
 	 * don't need the dependencies to be verified.
@@ -53,75 +72,12 @@ int zb_img_swap(uint8_t sm_idx) {
 	move_info.img_ok = true;
 	move_info.dep_ok = true;
 
-	continue_swap = false;
-	save_stat = (!swpstat_slt.size) ? false : true;
-	in_place = zb_inplace_slt(sm_idx);
-
-	run_info.hdr_ok = true;
-	run_info.key_ok = true;
-	if (!save_stat) {
-		/* Swap status is not saved to flash */
-		if (!in_place) {
-			LOG_ERR("BAD Configuration");
-			return -EINVAL;
-		}
-		if (zb_slt_has_img_hdr(&upgr_slt)) {
-			/* upgrade slot contains no image */
-			(void)zb_get_img_info(&run_info, &run_slt);
-			if (run_info.is_bootloader) {
-				LOG_INF("Erasing BL from run slot...");
-				(void)zb_erase(&run_slt, 0, run_slt.size);
-				return -EINVAL;
-			}
-			if (!run_info.confirmed) {
-				LOG_INF("Unconfirmed image in run slot...");
-				return -EINVAL;
-			}
-			return 0;
-		}
-		/* upgrade slot contains image */
-		cmd.cmd1 = CMD_EMPTY;
-		cmd.cmd2 = CMD_EMPTY;
-		cmd.cmd3 = CMD_EMPTY;
-	} else {
-		/* status is saved to flash */
-		if (zb_cmd_read(&swpstat_slt, &cmd) != -ENOENT) {
-			(void)zb_get_img_info(&run_info, &run_slt);
-			if (cmd.cmd2 == CMD2_SWP_END) {
-				if ((!run_info.is_bootloader) &&
-				    run_info.confirmed) {
-					LOG_INF("Nothing to do...");
-					return 0;
-				}
-				if ((in_place) && (run_info.is_bootloader)) {
-					LOG_INF("Erasing BL from run slot...");
-					(void)zb_erase(&run_slt, 0,
-						       run_slt.size);
-					/* Avoid booting this image */
-					return -EINVAL;
-				}
-				LOG_INF("Restoring previous image...");
-			} else {
-				continue_swap = true;
-				LOG_INF("Continuing swap...");
-			}
-		} else {
-			cmd.cmd1 = CMD_EMPTY;
-			cmd.cmd2 = CMD_EMPTY;
-			cmd.cmd3 = CMD_EMPTY;
-		}
-	}
-	run_info.hdr_ok = false;
-	run_info.key_ok = false;
-
 	if (!continue_swap) {
 		if (zb_val_img_info(&upgr_info, &upgr_slt, &run_slt)) {
 			LOG_ERR("BAD IMAGE in upgrade slot");
 			return -EINVAL;
 		}
-		if (cmd.cmd2 == CMD2_SWP_END) {
-			(void)zb_erase(&swpstat_slt, 0, swpstat_slt.size);
-		}
+		(void)zb_erase(&swpstat_slt, 0, swpstat_slt.size);
 		cmd.cmd1 = CMD1_SWAP;
 		cmd.cmd2 = CMD_EMPTY;
 		cmd.cmd3 = CMD_EMPTY;
@@ -280,9 +236,13 @@ int zb_img_swap(uint8_t sm_idx) {
 			break;
 		case CMD2_FINALISE:
 			LOG_INF("Prepare image for booting");
+			run_info.img_ok = true;
+			run_info.dep_ok = true;
+			run_info.key_ok = true;
 			(void)zb_get_img_info(&run_info, &run_slt);
-			if ((run_info.confirmed) || (in_place)) {
-				(void)zb_img_confirm(&run_slt);
+			if (run_info.confirmed) {
+				LOG_INF("Confirming the image");
+				(void)zb_slt_confirm(sm_idx);
 			}
 			cmd.cmd2 = CMD2_SWP_END;
 			break;

@@ -17,9 +17,6 @@ extern "C" {
 #define FSL_VER_MAGIC 	0x56455249 /* VERI in hex */
 #define FSL_EMPTY_U32	0xffffffff
 
-enum bt_type {BOOT_APP, RUN_APP};
-enum img_type {INVALID_IMG, BOOT_IMG, RUN_IMG};
-
 struct zb_fsl_hdr_info {
 	u16_t size;	/* Header size */
 	u8_t sigtype;	/* Header signature type */
@@ -44,21 +41,22 @@ struct zb_fsl_hdr {
 };
 
 struct zb_fsl_verify_hdr {
-	u32_t magic;
+	u32_t crc32;
 	u32_t pad0;
 	u32_t pad1;
 	u32_t pad2;
 	u32_t pad3;
 	u32_t pad4;
 	u32_t pad5;
-	u32_t crc32;
+	u32_t pad6;
 };
 
 void zb_fsl_jump_fsl(void);
-void zb_fsl_jump_boot(void);
+void zb_fsl_jump_swpr(void);
+void zb_fsl_jump_ldr(void);
 void zb_fsl_jump_run(void);
 void zb_fsl_boot(void);
-u32_t zb_fsl_crc32(struct device *fl_dev, u32_t off, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

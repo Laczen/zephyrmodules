@@ -40,7 +40,7 @@ extern "C" {
  * REMARK: The run, move and upgrade slots should be the same size.
  */
 
-enum slot {RUN, MOVE, UPGRADE, SWPSTAT, RAM};
+enum slot {RUN, MOVE, UPGRADE, SWPSTAT, VERIFY, RAM};
 
 struct zb_slt_info {
     u32_t offset;
@@ -125,6 +125,7 @@ bool zb_range_in_slt(struct zb_slt_info *info, u32_t address, size_t len);
  * @retval true if slot area is of type inplace
  */
 bool zb_inplace_slt(u8_t sm_idx);
+
 /**
  * @}
  */

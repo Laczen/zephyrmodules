@@ -34,13 +34,12 @@ BYTE_ALIGNMENT = 8 # Output hex file is aligned to BYTE_ALIGNMENT
 MIN_HDRSIZE = 512
 HDR_MAGIC = 0x46534c48 # FSLH in hex
 HDR_SIZE = 32
-VERIFY_HDR_MAGIC = 0x56455249 # VERI in hex
-VERIFY_HDR_SIZE = 32
 TLV_AREA_SIGNATURE_TYPE = 0
 TLV_AREA_SIGNATURE_LENGTH = 64
 TLVE_IMAGE_HASH = 0x0100
 TLVE_IMAGE_EPUBKEY = 0x0200
 TLVE_IMAGE_DEP = 0x0300
+TLVE_IMAGE_CONF = 0x0400
 
 INTEL_HEX_EXT = "hex"
 
@@ -51,11 +50,12 @@ STRUCT_ENDIAN_DICT = {
 
 class Image():
     def __init__(self, hdrsize = None, load_address = None, dest_address = None,
-                 version = 0, endian='little', type = 'image'):
+                 version = 0, endian='little', type = 'image', confirm = False):
         self.hdrsize = hdrsize
         self.load_address = load_address
         self.dest_address = dest_address
         self.run_address = None
+        self.confirm = confirm
         self.version = version or versmod.decode_version("0")
         self.endian = endian
         self.payload = []
@@ -207,7 +207,7 @@ class Image():
             'BBH'   # Image dep max
             ) #}
         dep = struct.pack(fmt,
-            self.dest_address + 0x14,
+            self.dest_address,
             0,0,0,
             self.version.major or 0,
             self.version.minor or 0,
@@ -218,10 +218,14 @@ class Image():
         hdr += struct.pack('H', len(dep))
         hdr += dep
 
+        if self.confirm:
+            hdr += struct.pack('H', TLVE_IMAGE_CONF)
+            hdr += struct.pack('H', 0)
+
         # close the tlv area with a zero byte
         hdr += struct.pack('H', 0)
 
-        hdr_len = self.hdrsize - VERIFY_HDR_SIZE - TLV_AREA_SIGNATURE_LENGTH
+        hdr_len = self.hdrsize - TLV_AREA_SIGNATURE_LENGTH
         if (len(hdr) > hdr_len):
             raise Exception("Header size to small to fit manifest info")
 
@@ -234,30 +238,6 @@ class Image():
         hdr_hash = sha.digest()
         hdr_signature = signkey.sign_prehashed(hdr_hash)
         hdr += hdr_signature
-
-        # Verify header
-        e = STRUCT_ENDIAN_DICT[self.endian]
-        fmt = (e +
-            'I' +   # MAGIC
-            'I' +   # PAD0
-            'I' +   # PAD1
-            'I' +   # PAD2
-            'I' +   # PAD3
-            'I' +   # PAD4
-            'I' +   # PAD5
-            'I'     # CRC32
-        )
-
-        hdr += struct.pack(fmt,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff,
-                0xffffffff
-        )
 
         self.payload = bytearray(self.payload)
         self.payload[0:len(hdr)] = hdr

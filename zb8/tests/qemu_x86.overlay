@@ -21,9 +21,14 @@
 			reg = <0x00000000 0x0001000>;
 		};
 
-		boot_partition: partition@1000 {
-			label = "boot";
-			reg = <0x00001000 0x0004000>;
+		swpr_partition: partition@1000 {
+			label = "swpr";
+			reg = <0x00001000 0x0002000>;
+		};
+
+		ldr_partition: partition@3000 {
+			label = "ldr";
+			reg = <0x00003000 0x0002000>;
 		};
 
 		storage_partition: partition@5000 {
@@ -52,18 +57,22 @@
 			label = "run-1";
 			reg = <0x00020000 0x00004000>;
 		};
-		move1_partition: partition@21000_0 {
-			label = "move-1";
-			reg = <0x00021000 0x00004000>;
-		};
-		upgrade1_partition: partition@21000_1 {
+		upgrade1_partition: partition@21000 {
 			label = "upgrade-1";
 			reg = <0x00021000 0x00004000>;
 		};
-/*		swpstat1_partition: partition@25000 {
-#			label = "swpstat-1";
-#			reg = <0x00025000 0x001000>;
-#		};
-*/
+		swpstat1_partition: partition@25000 {
+			label = "swpstat-1";
+			reg = <0x00025000 0x001000>;
+		};
+
+		run2_partition: partition@30000 {
+			label = "run-2";
+			reg = <0x00030000 0x00004000>;
+		};
+		upgrade2_partition: partition@31000 {
+			label = "upgrade-2";
+			reg = <0x00031000 0x00004000>;
+		};
 	};
 };

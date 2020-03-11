@@ -23,7 +23,7 @@ extern "C" {
  */
 
 struct zb_img_dep {
-    	u32_t offset;
+    	u32_t img_offset;
     	__packed struct zb_fsl_ver ver_min;
    	__packed struct zb_fsl_ver ver_max;
 };
@@ -44,7 +44,6 @@ struct zb_img_info {
     	bool img_ok;
     	bool dep_ok;
 	bool key_ok;
-	bool is_bootloader;
     	bool confirmed;
 };
 
@@ -60,6 +59,9 @@ struct zb_img_info {
 
 #define TLVE_IMAGE_DEPS 0x0300
 #define TLVE_IMAGE_DEPS_BYTES sizeof(struct zb_img_dep)
+
+#define TLVE_IMAGE_CONF 0x0400
+#define TLVE_IMAGE_CONF_BYTES 0
 
 /**
  * @brief image API
@@ -123,18 +125,6 @@ void zb_res_img_info(struct zb_img_info *info);
  * @retval true if image valid, false if not
  */
 bool zb_img_info_valid(struct zb_img_info *info);
-
-/**
- * @brief zb_img_confirm
- *
- * confirms the image by writing a crc32 just before the start of the image
- *
- * @param slt_info
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- *
- */
-int zb_img_confirm(struct zb_slt_info *slt_info);
 
 /**
  * @}

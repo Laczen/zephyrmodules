@@ -12,7 +12,8 @@
 
 #include <errno.h>
 #include <device.h>
-#include <drivers/flash.h>
+//#include <drivers/flash.h>
+#include <sys/crc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(zb8_image);
@@ -24,31 +25,34 @@ LOG_MODULE_REGISTER(zb8_image);
 static int img_check_dep(struct zb_img_dep *dep)
 {
 	u8_t cnt;
-	struct zb_fsl_ver ver;
-	struct zb_slt_info run_slt, move_slt;
+	struct zb_fsl_hdr hdr;
+	struct zb_slt_info run;
 	bool dep_loc_found = false;
 
-	LOG_INF("Dependency offset %x", dep->offset);
+	LOG_INF("Dependency image offset %x", dep->img_offset);
 
 	cnt = zb_slt_area_cnt();
 	while (cnt > 0) {
 		cnt--;
-		(void)zb_slt_open(&run_slt, cnt, RUN);
-		(void)zb_slt_open(&move_slt, cnt, MOVE);
-		run_slt.offset += offsetof(struct zb_fsl_hdr, version);
-		move_slt.offset += offsetof(struct zb_fsl_hdr, version);
-		if (dep->offset == run_slt.offset) {
+		(void)zb_slt_open(&run, cnt, RUN);
+		if (dep->img_offset == run.offset) {
 			dep_loc_found = true;
 			break;
 		}
 	}
 
 	if (!dep_loc_found) {
-		run_slt.offset = DT_FLASH_AREA_BOOT_OFFSET;
-		run_slt.offset += offsetof(struct zb_fsl_hdr, version);
-		run_slt.fl_dev = device_get_binding(DT_FLASH_AREA_BOOT_DEV);
-		move_slt = run_slt;
-		if (dep->offset == run_slt.offset) {
+		run.offset = DT_FLASH_AREA_SWPR_OFFSET;
+		run.fl_dev = device_get_binding(DT_FLASH_AREA_SWPR_DEV);
+		if (dep->img_offset == run.offset) {
+			dep_loc_found = true;
+		}
+	}
+
+	if (!dep_loc_found) {
+		run.offset = DT_FLASH_AREA_LDR_OFFSET;
+		run.fl_dev = device_get_binding(DT_FLASH_AREA_LDR_DEV);
+		if (dep->img_offset == run.offset) {
 			dep_loc_found = true;
 		}
 	}
@@ -58,29 +62,22 @@ static int img_check_dep(struct zb_img_dep *dep)
 		return -EFAULT;
 	}
 
-	if (flash_read(run_slt.fl_dev, run_slt.offset, &ver,
-		       sizeof(struct zb_fsl_ver))) {
+	if (zb_read(&run, 0U, &hdr, sizeof(struct zb_fsl_hdr))) {
 		return -EFAULT;
 	}
 
-	if ((ver.major == 0xff) && (ver.minor == 0xff)) {
-		if (flash_read(move_slt.fl_dev, move_slt.offset, &ver,
-			       sizeof(struct zb_fsl_ver))) {
-			return -EFAULT;
-		}
-	}
-
-	if ((ver.major == 0xff) && (ver.minor == 0xff)) {
-		ver.minor = 0x00;
-		ver.major = 0x00;
-	}
-
-	if ((dep->ver_min.major <= ver.major) &&
-	    (ver.major <= dep->ver_max.major) &&
-	    (dep->ver_min.minor <= ver.minor) &&
-	    (ver.minor <= dep->ver_max.minor)) {
+	if (hdr.magic != FSL_MAGIC) {
 		return 0;
 	}
+
+	if ((dep->ver_min.major <= hdr.version.major) &&
+	    (hdr.version.major <= dep->ver_max.major) &&
+	    (dep->ver_min.minor <= hdr.version.minor) &&
+	    (hdr.version.minor <= dep->ver_max.minor)) {
+		LOG_INF("Dependency OK");
+		return 0;
+	}
+	LOG_INF("Dependency failure");
 	return -EFAULT;
 }
 
@@ -91,7 +88,6 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	u32_t off;
 	struct tlv_entry entry;
 	struct zb_fsl_hdr hdr;
-	struct zb_fsl_verify_hdr ver;
 	struct zb_img_dep *dep;
 	size_t tsize;
 	u8_t tlv[TLV_AREA_MAX_SIZE];
@@ -111,27 +107,11 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 		return -EFAULT;
 	}
 
-	tsize = hdr.hdr_info.size - sizeof(struct zb_fsl_verify_hdr);
-	rc = zb_read(slt_info, tsize , &ver, sizeof(struct zb_fsl_verify_hdr));
-	if (rc) {
-		return rc;
-	}
-
-	/* Check if the image is confirmed */
-	if (ver.magic == FSL_VER_MAGIC) {
-		info->confirmed = true;
-	}
-
-	/* Check if the image is a bootloader */
-	if ((hdr.run_offset - hdr.hdr_info.size) == DT_FLASH_AREA_BOOT_OFFSET) {
-		info->is_bootloader = true;
-	}
-
 	if (!full_check) {
 		return 0;
 	}
 
-	tsize -= sizeof(sign);
+	tsize = hdr.hdr_info.size - sizeof(sign);
 	/* Verify the image header signature */
 	if (!info->hdr_ok) {
 		rc = zb_hash(hdrhash, slt_info, 0U, tsize);
@@ -167,6 +147,17 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	 	return rc;
 	}
 
+	/* Get the confirmation status */
+	off = 0;
+	while ((!zb_step_tlv(tlv, &off, &entry)) &&
+	       (entry.type != TLVE_IMAGE_CONF) &&
+	       (entry.length != TLVE_IMAGE_CONF_BYTES));
+	if ((entry.type == TLVE_IMAGE_CONF) &&
+	    (entry.length == TLVE_IMAGE_CONF_BYTES)) {
+		LOG_DBG("IMG CONFIRMED");
+		info->confirmed = true;
+	}
+
 	/* Verify the image hash */
 	off = 0;
 	while ((!zb_step_tlv(tlv, &off, &entry)) &&
@@ -196,8 +187,10 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	while ((!zb_step_tlv(tlv, &off, &entry)) &&
 	       (entry.type != TLVE_IMAGE_EPUBKEY) &&
 	       (entry.length != TLVE_IMAGE_EPUBKEY_BYTES));
+
 	if (!entry.type) {
 		/* No encryption key -> no encryption used */
+		LOG_DBG("IMG NOT ENCRYPTED");
 		info->enc_start = info->end;
 	} else {
 		if (!info->key_ok) {
@@ -207,6 +200,7 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 			}
 			info->key_ok = true;
 		}
+		LOG_DBG("IMG ENCRYPTED KEY OK");
 		info->enc_start = info->start;
 	}
 
@@ -217,12 +211,13 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	/* Validate the depencies */
 	off = 0;
 	while (!zb_step_tlv(tlv, &off, &entry)) {
-		if ((entry.type != TLVE_IMAGE_DEPS) &&
+		if ((entry.type != TLVE_IMAGE_DEPS) ||
 	       	    (entry.length != TLVE_IMAGE_DEPS_BYTES)) {
 			continue;
 		}
 		dep = (struct zb_img_dep *)entry.value;
-		if (!info->confirmed && (dep->offset == dst_slt_info->offset)) {
+		if (!info->confirmed &&
+		   (dep->img_offset == dst_slt_info->offset)) {
 			dep->ver_min.major = dep->ver_max.major;
 			dep->ver_min.minor = dep->ver_max.minor;
 		}
@@ -233,7 +228,7 @@ static int img_get_info(struct zb_img_info *info, struct zb_slt_info *slt_info,
 	}
 	LOG_DBG("IMG DEPENDENCIES OK");
 	info->dep_ok = true;
-
+	LOG_INF("Finshed img validation");
 	return 0;
 }
 
@@ -243,7 +238,6 @@ void zb_res_img_info(struct zb_img_info *info)
 	info->img_ok = false;
 	info->dep_ok = false;
 	info->key_ok = false;
-	info->is_bootloader = false;
 	info->confirmed = false;
 }
 
@@ -267,35 +261,4 @@ int zb_slt_has_img_hdr(struct zb_slt_info *slt_info)
 bool zb_img_info_valid(struct zb_img_info *info)
 {
 	return info->hdr_ok & info->img_ok & info->dep_ok;
-}
-
-int zb_img_confirm(struct zb_slt_info *slt_info)
-{
-	int rc;
-	struct zb_fsl_hdr hdr;
-	struct zb_fsl_verify_hdr ver;
-	u32_t off;
-	u32_t crc32;
-
-	rc = zb_read(slt_info, 0U, &hdr, sizeof(struct zb_fsl_hdr));
-	if (rc) {
-		return rc;
-	}
-
-	off = hdr.hdr_info.size - sizeof(struct zb_fsl_verify_hdr);
-	rc = zb_read(slt_info, off, &ver, sizeof(struct zb_fsl_verify_hdr));
-	if (rc) {
-		return rc;
-	}
-
-	crc32 = zb_fsl_crc32(slt_info->fl_dev, slt_info->offset + off +
-			     sizeof(struct zb_fsl_verify_hdr), hdr.size);
-
-	if (ver.crc32 == crc32) {
-		return 0;
-	}
-
-	ver.magic = FSL_VER_MAGIC;
-	ver.crc32 = crc32;
-	rc = zb_write(slt_info, off, &ver, sizeof(struct zb_fsl_verify_hdr));return rc;
 }

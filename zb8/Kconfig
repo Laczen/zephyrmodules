@@ -17,8 +17,8 @@ module = ZB_EIGHT
 module-str = zb8
 source "subsys/logging/Kconfig.template.log_config"
 
-config ZB_EIGHT_IS_BOOTLOADER
-	bool "Enable zb8 library for a bootloader"
+config ZB_EIGHT_IS_SWAPPER
+	bool "Enable zb8 library for a image swapper"
 	depends on ZB_EIGHT
 	select TINYCRYPT
 	select TINYCRYPT_SHA256

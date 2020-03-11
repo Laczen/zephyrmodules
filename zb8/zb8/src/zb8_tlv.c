@@ -7,6 +7,7 @@
 #include <zb8/zb8_tlv.h>
 
 #include <errno.h>
+#include <string.h>
 
 int zb_step_tlv(const void *data, u32_t *offset, struct tlv_entry *entry)
 {
@@ -14,19 +15,20 @@ int zb_step_tlv(const void *data, u32_t *offset, struct tlv_entry *entry)
 
     	p += *offset;
 
-    	entry->type = *(u16_t *)p;
+    	memcpy(&entry->type, p, sizeof(u16_t));
+
+	if (entry->type == 0x0000) {
+		return -ENOENT;
+	}
+
 	p += sizeof(u16_t);
 
-    	entry->length = *(u16_t *)p;
+    	memcpy(&entry->length, p, sizeof(u16_t));
 	p += sizeof(u16_t);
 
 	entry->value = p;
 
 	*offset += entry->length + 2 * sizeof(u16_t);
-
-	if (entry->type == 0x0000) {
-		return -ENOENT;
-	}
 
 	return 0;
 }

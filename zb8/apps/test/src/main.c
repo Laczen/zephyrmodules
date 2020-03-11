@@ -15,4 +15,13 @@ LOG_MODULE_REGISTER(main);
 void main(void)
 {
 	LOG_INF("Welcome to the test application");
+
+	/* In an application you can jump to the first stage loader,
+	 * the swapper or the image loader by calling the routines:
+	 *   zb_fsl_jump_fsl(),
+	 *   zb_fsl_jump_swpr(),
+	 *   zb_fsl_jump_ldr,
+	 */
+	LOG_INF("Let's jump back to the loader (if any)");
+	zb_fsl_jump_ldr();
 }

@@ -9,9 +9,10 @@ zephyr_library_sources_ifdef(CONFIG_ZB_EIGHT
     zb8/src/zb8_slot.c
     zb8/src/zb8_dfu.c
     zb8/src/zb8_fsl.c
+    zb8/src/zb8_confirm.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_ZB_EIGHT_IS_BOOTLOADER
+zephyr_library_sources_ifdef(CONFIG_ZB_EIGHT_IS_SWAPPER
     zb8/src/zb8_crypto.c
     zb8/src/zb8_tlv.c
     zb8/src/zb8_image.c

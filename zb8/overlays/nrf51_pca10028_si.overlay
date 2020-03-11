@@ -32,29 +32,25 @@
 			label = "fsl";
 			reg = <0x00000000 0x00002000>;
 		};
-		boot_partition: partition@2000 {
-			label = "boot";
-			reg = <0x00002000 0x00017000>;
+		swpr_partition: partition@2000 {
+			label = "swpr";
+			reg = <0x00002000 0x00005000>;
 		};
-		storage_partition: partition@19000 {
+		ldr_partition: partition@7000 {
+			label = "ldr";
+			reg = <0x00007000 0x00014000>;
+		};
+		storage_partition: partition@1B000 {
 			label = "storage";
-			reg = <0x00019000 0x00000C00>;
+			reg = <0x0001B000 0x00001000>;
 		};
-		swpstat0_partition: partition@19C00 {
-			label = "swpstat-0";
-			reg = <0x00019C00 0x00000400>;
-		};
-		run0_partition: partition@1A000 {
+		run0_partition: partition@1C000 {
 			label = "run-0";
-			reg = <0x0001A000 0x00025800>;
+			reg = <0x0001C000 0x00023800>;
 		};
-		move0_partition: partition@1A800_0 {
-			label = "move-0";
-			reg = <0x0001A800 0x00025800>;
-		};
-		upgrade0_partition: partition@19800_1 {
+		upgrade0_partition: partition@1C800 {
 			label = "upgrade-0";
-			reg = <0x0001A800 0x00025800>;
+			reg = <0x0001C800 0x00023800>;
 		};
 	};
 };

@@ -71,8 +71,9 @@ static void bt_ready(int err)
 
 static void reset_to_app(void)
 {
-	zb_dfu_receive_flush();
-	LOG_INF("Receive finished");
+	(void)zb_dfu_receive_flush();
+	LOG_INF("Receive finished calling the swapper");
+	zb_fsl_jump_swpr();
 }
 
 struct nrf_dfu_cb dfu_callbacks = {
@@ -85,46 +86,11 @@ static void dfu_init(void)
 	nrf_dfu_init(&dfu_callbacks, 0U, 0U);
 }
 
-/* change this to use another GPIO port */
-#define PORT	DT_ALIAS_SW0_GPIOS_CONTROLLER
-
-/* change this to use another GPIO pin */
-#define PIN     DT_ALIAS_SW0_GPIOS_PIN
-
-/* change this to enable pull-up/pull-down */
-#define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
-
 void main(void)
 {
-	int err, cnt, rc = 0;
-	struct device *gpiob;
-	u32_t val;
+	int err;
 
-	gpiob = device_get_binding(PORT);
-	if (!gpiob) {
-		LOG_INF("error\n");
-		return;
-	}
-	gpio_pin_configure(gpiob, PIN, GPIO_DIR_IN |  PULL_UP);
-	gpio_pin_read(gpiob, PIN, &val);
-
-	LOG_INF("Welcome to ZB-8 bootloader with bledfu");
-
-	cnt = zb_slt_area_cnt();
-
-	/* Start or continue swap */
-	while ((cnt--) > 0) {
-		rc = rc | zb_img_swap(cnt);
-	}
-
-	if (!val || rc) {
-		LOG_INF("Remaining in the bootloader");
-	} else {
-		LOG_INF("Starting the image");
-
-		/* TODO Add support for RAM images */
-		zb_fsl_jump_run();
-	}
+	LOG_INF("Welcome to ZB-8 bledfu loader");
 
 	err = bt_enable(bt_ready);
 	if (err) {

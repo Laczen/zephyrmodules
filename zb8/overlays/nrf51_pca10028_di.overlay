@@ -30,31 +30,31 @@
 
 		fsl_partition: partition@0 {
 			label = "fsl";
-			reg = <0x00000000 0x00002000>;
+			reg = <0x00000000 0x00001000>;
 		};
-		boot_partition: partition@2000 {
-			label = "boot";
-			reg = <0x00002000 0x00005000>;
+		boot_partition: partition@1000 {
+			label = "swapper";
+			reg = <0x00001000 0x00004000>;
 		};
-		storage_partition: partition@7000 {
+		storage_partition: partition@5000 {
 			label = "storage";
-			reg = <0x00007000 0x00000C00>;
+			reg = <0x00005000 0x00000C00>;
 		};
-		swpstat0_partition: partition@7C000 {
+		swpstat0_partition: partition@5C00 {
 			label = "swpstat-0";
-			reg = <0x00007C00 0x0000400>;
+			reg = <0x00005C00 0x0000400>;
 		};
-		run0_partition: partition@8000 {
+		run0_partition: partition@6000 {
 			label = "run-0";
-			reg = <0x00008000 0x0001BC00>;
+			reg = <0x00006000 0x0001CC00>;
 		};
-		move0_partition: partition@8800 {
+		move0_partition: partition@6800 {
 			label = "move-0";
-			reg = <0x00008800 0x0001BC00>;
+			reg = <0x00006800 0x0001CC00>;
 		};
-		upgrade0_partition: partition@24400 {
+		upgrade0_partition: partition@23400 {
 			label = "upgrade-0";
-			reg = <0x00024400 0x0001BC00>;
+			reg = <0x00024400 0x0001CC00>;
 		};
 	};
 };
