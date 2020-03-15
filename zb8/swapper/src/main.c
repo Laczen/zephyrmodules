@@ -25,7 +25,10 @@ void main(void)
 
 	/* Start or continue swap */
 	while ((cnt--) > 1) {
-		(void)zb_img_swap(cnt);
+		rc = zb_img_swap(cnt);
+		if (rc) {
+			LOG_INF("Swap failed for slot %u [%d]", cnt, rc);
+		}
 	}
 
 	rc = zb_img_swap(0);
@@ -44,6 +47,8 @@ void main(void)
 			}
 		}
 
+	} else {
+		LOG_INF("Swap failed for slot 0 [%d]", rc);
 	}
 
 	if (rc && zb_inplace_slt(0)) {

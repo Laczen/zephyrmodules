@@ -4,7 +4,9 @@ add_library(zb8 INTERFACE)
 zephyr_include_directories(zb8/include)
 
 zephyr_library()
+
 zephyr_library_sources_ifdef(CONFIG_ZB_EIGHT
+    zb8/src/zb8_log.c
     zb8/src/zb8_flash.c
     zb8/src/zb8_slot.c
     zb8/src/zb8_dfu.c

@@ -13,7 +13,7 @@
 #include <sys/crc.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb8_confirm);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 static int zb_slt_crc32(u32_t *crc32, struct zb_slt_info *slt_info)
 {

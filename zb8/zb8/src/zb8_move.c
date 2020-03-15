@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb_move);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 int zb_img_move(zb_move_cmd *mcmd, size_t len);
 

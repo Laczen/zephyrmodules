@@ -15,7 +15,7 @@
 #include <sys/crc.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb8_dfu);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 extern u8_t slotmap_cnt;
 extern struct zb_slt_area slot_map[];

@@ -13,7 +13,7 @@
 #include <tinycrypt/aes.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb8_crypto);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 extern const u8_t ec256_boot_pri_key[];
 extern const u16_t ec256_boot_pri_key_len;

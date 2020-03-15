@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb8_flash);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 extern const struct zb_slt_area slotmap[];
 extern const unsigned int slotmap_cnt;

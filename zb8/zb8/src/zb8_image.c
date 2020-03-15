@@ -16,7 +16,7 @@
 #include <sys/crc.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(zb8_image);
+LOG_MODULE_DECLARE(zb8, CONFIG_ZB_EIGHT_LOG_LEVEL);
 
 #define TLV_AREA_MIN_SIZE 256
 #define TLV_AREA_MAX_SIZE 1024

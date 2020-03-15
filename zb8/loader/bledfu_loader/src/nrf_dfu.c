@@ -184,6 +184,7 @@ static ssize_t write_control(struct bt_conn *conn,
 	case DFU_OP_VALIDATE_IMG:
 	{
 		if (state != DFU_STATE_RECV_DONE) {
+			LOG_INF("Reset state 1");
 			reset_state(conn);
 		} else if (cb && cb->validate && cb->validate(crc16)) {
 			rsp[2] = RSP_CRC_ERROR;
@@ -195,6 +196,7 @@ static ssize_t write_control(struct bt_conn *conn,
 		bt_gatt_notify(conn, attr, &rsp, sizeof(rsp));
 
 		if (rsp[2] != RSP_SUCCESS) {
+			LOG_INF("Reset state 2");
 			reset_state(conn);
 		}
 
@@ -203,11 +205,12 @@ static ssize_t write_control(struct bt_conn *conn,
 	case DFU_OP_ACTIVATE_IMG:
 	{
 		if (state != DFU_STATE_VALIDATE) {
+			LOG_INF("Reset state 3");
 			bt_gatt_notify(conn, attr, &rsp, sizeof(rsp));
 			reset_state(conn);
 		} else {
 			reset_state(conn);
-
+			LOG_INF("Reset state 4");
 			if (cb && cb->reset_to_app) {
 				/* Boot to app */
 				cb->reset_to_app();
@@ -319,6 +322,10 @@ static ssize_t write_packet(struct bt_conn *conn,
 			/* Report Received Image Size */
 			bt_gatt_notify(conn,  &nrf_dfu_svc.attrs[1], &rsp,
 				       sizeof(rsp));
+		}
+
+		if ((exp_size == 0) && cb && cb->receive_done) {
+			err |= cb->receive_done();
 		}
 
 		if (exp_size == 0 || err) {

@@ -8,6 +8,7 @@
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
+#include <power/reboot.h>
 #include <bluetooth/gatt.h>
 
 #include <zb8/zb8_move.h>
@@ -71,13 +72,15 @@ static void bt_ready(int err)
 
 static void reset_to_app(void)
 {
-	(void)zb_dfu_receive_flush();
-	LOG_INF("Receive finished calling the swapper");
+	int err = 0;
+	err = bt_le_adv_stop();
+	LOG_INF("Receive finished calling the swapper [%d]", err);
 	zb_fsl_jump_swpr();
 }
 
 struct nrf_dfu_cb dfu_callbacks = {
 	.receive = &zb_dfu_receive,
+	.receive_done = &zb_dfu_receive_flush,
 	.reset_to_app = &reset_to_app,
 };
 

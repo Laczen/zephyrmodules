@@ -40,6 +40,13 @@ struct nrf_dfu_cb {
 	 */
 	int (*receive)(u32_t offset, const u8_t *data, size_t len);
 
+	/** Attribute receive_done callback (optional), called at end of
+	 *  receive to allow flushing a buffer
+	 *
+	 *  @return 0 on success, -errno code on error
+	 */
+	int (*receive_done)(void);
+
 	/** Attribute validate callback (optional)
 	 *
 	 *  @param crc   expected updated image CRC16
